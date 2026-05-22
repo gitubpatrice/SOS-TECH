@@ -1,6 +1,6 @@
 # SOS Tech — Security model
 
-Current release : **v0.3.0** (2026-05-22)
+Current release : **v0.3.1** (2026-05-22)
 
 This document describes the threat model SOS Tech protects against, the cryptographic
 primitives it uses, the architectural choices that make those primitives meaningful,
@@ -121,7 +121,42 @@ SOS Tech cannot and does not verify that consent was obtained.
 
 ## Audit history
 
-### v0.3.0 (this release) — Security foundations (PIN + biometric + panic-decoy)
+### v0.3.1 — Audit fixes (security foundations hardening)
+
+Multi-axis precision audit (post-v0.3.0 tag) surfaced 4 HIGH + 4 MEDIUM findings
+on the freshly landed security layer. All HIGH and the groupable MEDIUM fixed
+before the v0.3.1 retag closes:
+
+- **SEC-1+5** — `sos_tech_security.preferences_pb` (PBKDF2 PIN + panic hashes)
+  excluded from cloud backup + device transfer + Android < 12 file-domain backup
+  rules. Blocks offline brute-force from a leaked backup.
+- **SEC-2** — `AppLockManager.setPanicCode` now rejects with `IllegalArgumentException`
+  if the candidate hashes to the same value as the configured PIN (constant-time
+  compare). Without this guard, panic == PIN created a permanent self-lockout
+  because the panic branch in `attemptUnlock` precedes the PIN branch.
+- **SEC-3** — `SecurityStore.hasPanic` Flow now feeds `SettingsUiState.isPanicConfigured`
+  (was hardcoded `false`). User sees "Change panic code" vs "Set panic code"
+  accurately, preventing silent overwrite. `SecurityStore.hasPin` Flow added
+  for symmetry.
+- **BR-1** — `attemptUnlock` with `pinSnapshot == null` now fails closed to
+  `LockState.Locked` (was `Disabled` → would have silently unlocked the app
+  after a crash mid-wipe).
+- **SEC-6** — `unlockMutex` added around `attemptUnlock` body. Two concurrent unlock
+  attempts (BiometricPrompt + PIN double-tap) can no longer race on
+  `failCount` / `lockoutUntil`.
+- **UI-1** — `UrgenceHoldButton` now resets `isHolding = false` BEFORE
+  invoking `onTriggered()` to shrink the re-trigger window (already absorbed by
+  `EmergencyViewModel.triggerInFlight` AtomicBoolean — defense in depth).
+- **KQ-2** — `appLockManager` made `private` in `LockViewModel`. External callers
+  now use `beginBiometricChallenge()` / `markBiometricUnlocked()` dedicated methods.
+- **UI-2** — `LockScreen` fixed 500 ms timer removed. `isSubmitting` now resets via
+  `LaunchedEffect(lockState)` (any state transition) and `LockEvent.InvalidPin` handler.
+
+Tests: `AuditV031Test` 11 new regression tests. Total **70 / 70 green**
+(`AuditV001Test` 21 + `AuditV020Test` 13 + `AuditV030Test` 25 + `AuditV031Test` 11).
+`lintVitalRelease` clean. `assembleRelease` successful (R8 + signed APKs).
+
+### v0.3.0 — Security foundations (PIN + biometric + panic-decoy)
 
 - **AppLockManager** port from SMS Tech v1.x with full `LockState` sealed surface
   (`Disabled` / `Locked` / `LockedOut` / `Unlocked` / `PanicDecoy`).

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.filestech.sos.data.local.datastore.AppSettings
 import com.filestech.sos.data.local.datastore.LockMode
+import com.filestech.sos.data.local.datastore.SecurityStore
 import com.filestech.sos.data.local.datastore.SettingsRepository
 import com.filestech.sos.di.IoDispatcher
 import com.filestech.sos.domain.emergency.EmergencyTemplate
@@ -13,7 +14,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -27,6 +28,8 @@ sealed interface SettingsEvent {
     data object PanicSetSuccess : SettingsEvent
     data object PanicClearSuccess : SettingsEvent
     data object NukeSuccess : SettingsEvent
+    /** SEC-2: panic code candidate hashed to the same value as the primary PIN. */
+    data object PanicSameAsPin : SettingsEvent
     data class Error(val message: String) : SettingsEvent
 }
 
@@ -50,29 +53,34 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val appLockManager: AppLockManager,
+    private val securityStore: SecurityStore,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
-    val state: StateFlow<SettingsUiState> = settings.flow
-        .map { s ->
-            SettingsUiState(
-                shortcutNotifEnabled = s.emergency.shortcutNotifEnabled,
-                voiceEnabled = s.voice.enabled,
-                cascadeEnabled = s.cascade.enabled,
-                sirenEnabled = s.emergency.sirenEnabled,
-                liveGpsEnabled = s.liveGps.enabled,
-                recordingEnabled = s.recording.enabled,
-                webhookEnabled = s.webhook.enabled,
-                flagSecure = s.security.flagSecure,
-                emergencyTemplate = s.emergency.template,
-                emergencyIncludeLocation = s.emergency.includeLocation,
-                lockMode = s.security.lockMode,
-                // isPinConfigured: lockMode != OFF means a PIN was set at some point.
-                // We derive this from lockMode rather than hitting SecurityStore on each emission.
-                isPinConfigured = s.security.lockMode != LockMode.OFF,
-                isPanicConfigured = false, // no easy flow source; checked on demand
-            )
-        }
+    val state: StateFlow<SettingsUiState> = combine(
+        settings.flow,
+        securityStore.hasPanic,
+    ) { s, hasPanic ->
+        SettingsUiState(
+            shortcutNotifEnabled = s.emergency.shortcutNotifEnabled,
+            voiceEnabled = s.voice.enabled,
+            cascadeEnabled = s.cascade.enabled,
+            sirenEnabled = s.emergency.sirenEnabled,
+            liveGpsEnabled = s.liveGps.enabled,
+            recordingEnabled = s.recording.enabled,
+            webhookEnabled = s.webhook.enabled,
+            flagSecure = s.security.flagSecure,
+            emergencyTemplate = s.emergency.template,
+            emergencyIncludeLocation = s.emergency.includeLocation,
+            lockMode = s.security.lockMode,
+            // isPinConfigured: lockMode != OFF means a PIN was set at some point.
+            // We derive this from lockMode rather than hitting SecurityStore on each emission.
+            isPinConfigured = s.security.lockMode != LockMode.OFF,
+            // SEC-3: isPanicConfigured is now driven by a real Flow from SecurityStore
+            // (was hardcoded false). User sees "Change panic code" accurately.
+            isPanicConfigured = hasPanic,
+        )
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000L),
@@ -158,6 +166,13 @@ class SettingsViewModel @Inject constructor(
             try {
                 appLockManager.setPanicCode(pin)
                 _events.send(SettingsEvent.PanicSetSuccess)
+            } catch (e: IllegalArgumentException) {
+                // SEC-2: panic code matches primary PIN — must stay distinct.
+                if (e.message == "panic_same_as_pin") {
+                    _events.send(SettingsEvent.PanicSameAsPin)
+                } else {
+                    _events.send(SettingsEvent.Error(e.message ?: "Panic code error"))
+                }
             } catch (e: Exception) {
                 _events.send(SettingsEvent.Error(e.message ?: "Panic code error"))
             }

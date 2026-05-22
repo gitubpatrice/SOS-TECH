@@ -1,0 +1,8 @@
+v0.3.1 — Security audit hardening.
+
+- PIN hashes excluded from cloud backup (blocks offline brute-force).
+- Panic code = main PIN now rejected (prevents self-lockout).
+- Panic-configured state correctly reflected in settings UI.
+- Fail-closed lock on inconsistent post-wipe state.
+- Mutex on concurrent unlock attempts.
+- URGENCE SMS button: internal ordering hardened.

@@ -5,6 +5,11 @@
     <exclude domain="database" path="sos_tech.db" />
     <exclude domain="database" path="sos_tech.db-shm" />
     <exclude domain="database" path="sos_tech.db-wal" />
-    <!-- DataStore preferences -->
+    <!-- DataStore preferences (settings) -->
     <exclude domain="sharedpref" path="sos_settings.preferences_pb" />
+    <exclude domain="file" path="datastore/sos_settings.preferences_pb" />
+    <!-- SEC-1+5: DataStore security (PBKDF2 PIN + panic hashes) — MUST NOT back up.
+         A leaked backup would expose the hashes to offline brute-force attacks. -->
+    <exclude domain="sharedpref" path="sos_tech_security.preferences_pb" />
+    <exclude domain="file" path="datastore/sos_tech_security.preferences_pb" />
 </full-backup-content>

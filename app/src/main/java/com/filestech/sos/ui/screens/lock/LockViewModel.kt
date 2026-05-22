@@ -24,7 +24,9 @@ sealed interface LockEvent {
 
 @HiltViewModel
 class LockViewModel @Inject constructor(
-    val appLockManager: AppLockManager,
+    // KQ-2: private — callers use dedicated public methods (beginBiometricChallenge,
+    // markBiometricUnlocked) rather than reaching into the manager directly.
+    private val appLockManager: AppLockManager,
     private val settings: SettingsRepository,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {

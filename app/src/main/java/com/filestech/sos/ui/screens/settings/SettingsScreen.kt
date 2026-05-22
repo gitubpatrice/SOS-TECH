@@ -68,6 +68,8 @@ fun SettingsScreen(
     val msgPanicSet = stringResource(R.string.settings_panic_set_success)
     val msgPanicCleared = stringResource(R.string.settings_panic_cleared)
     val msgBioFailed = stringResource(R.string.settings_biometric_error_no_pin)
+    // SEC-2: pre-resolved outside LaunchedEffect (stringResource requires Composition context)
+    val msgPanicSameAsPin = stringResource(R.string.settings_panic_same_as_pin)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -79,6 +81,8 @@ fun SettingsScreen(
                 SettingsEvent.PanicSetSuccess -> snackbarHost.showSnackbar(msgPanicSet)
                 SettingsEvent.PanicClearSuccess -> snackbarHost.showSnackbar(msgPanicCleared)
                 SettingsEvent.NukeSuccess -> { /* handled elsewhere */ }
+                // SEC-2: panic == PIN rejected — inform user with a clear message.
+                SettingsEvent.PanicSameAsPin -> snackbarHost.showSnackbar(msgPanicSameAsPin)
                 is SettingsEvent.Error -> snackbarHost.showSnackbar(event.message)
             }
         }

@@ -70,6 +70,13 @@ class AppLockManager @Inject constructor(
     private val resolvedLatch = AtomicBoolean(false)
     private val resolveMutex = Mutex()
 
+    /**
+     * SEC-6: Serialises [attemptUnlock] calls. Without this, two concurrent coroutines
+     * (BiometricPrompt success callback + PIN double-tap) could race on `failCount` /
+     * `lockoutUntil` reads and writes, potentially under-counting failures.
+     */
+    private val unlockMutex = Mutex()
+
     suspend fun resolveInitialState(): LockState = withContext(io) {
         val s = settings.flow.first()
         val resolved = if (s.security.lockMode == LockMode.OFF) LockState.Disabled else LockState.Locked
@@ -143,8 +150,29 @@ class AppLockManager @Inject constructor(
     /**
      * Sets a panic code (decoy). When this code is entered at lock screen, the app enters
      * [LockState.PanicDecoy] — UI is visible but PanicGuard blocks all side-effects.
+     *
+     * SEC-2: Rejects the candidate if it hashes to the same value as the configured primary PIN.
+     * Without this guard, panic == PIN creates a permanent self-lockout: the panic branch in
+     * [attemptUnlock] precedes the PIN branch, so entering the real PIN would silently open
+     * PanicDecoy and the user could never reach [LockState.Unlocked] again.
+     *
+     * @throws IllegalArgumentException with message "panic_same_as_pin" if candidate matches PIN.
      */
     suspend fun setPanicCode(panicPin: CharArray): Unit = withContext(io) {
+        // SEC-2: compare against existing PIN hash (constant-time) before storing.
+        val existing = securityStore.pinSnapshot()
+        if (existing != null) {
+            val testHash = kdf.derive(panicPin, existing.salt, existing.iterations)
+            val sameAsPin = try {
+                constantTimeEquals(testHash, existing.hash)
+            } finally {
+                testHash.wipe()
+            }
+            if (sameAsPin) {
+                panicPin.wipe()
+                throw IllegalArgumentException("panic_same_as_pin")
+            }
+        }
         val salt = kdf.newSalt()
         val iters = kdf.calibrate()
         try {
@@ -160,47 +188,56 @@ class AppLockManager @Inject constructor(
     }
 
     suspend fun attemptUnlock(candidate: CharArray): LockState = withContext(io) {
-        val now = System.currentTimeMillis()
-        val lockoutUntil = securityStore.lockoutUntil.first()
-        if (lockoutUntil > now) {
-            return@withContext LockState.LockedOut(lockoutUntil).also { _state.value = it }
-        }
+        // SEC-6: serialise concurrent unlock attempts (BiometricPrompt + PIN double-tap race).
+        unlockMutex.withLock {
+            val now = System.currentTimeMillis()
+            val lockoutUntil = securityStore.lockoutUntil.first()
+            if (lockoutUntil > now) {
+                return@withLock LockState.LockedOut(lockoutUntil).also { _state.value = it }
+            }
 
-        // Audit P1-3: both PIN and panic snapshots are evaluated; failure counter incremented
-        // once if neither matches. Prevents brute-forcing a 4-digit panic code while the long
-        // PIN absorbs the lockout (without this, ~10 000 panic probes were possible without
-        // tripping the exponential cool-down).
-        val panicSnap = securityStore.panicSnapshot()
-        val panicMatches = panicSnap != null &&
-            matches(candidate, panicSnap.salt, panicSnap.hash, panicSnap.iterations)
-        if (panicMatches) {
-            _state.value = LockState.PanicDecoy
-            securityStore.setFailCount(0)
-            securityStore.setLastUnlock(now)
-            return@withContext LockState.PanicDecoy
-        }
+            // Audit P1-3: both PIN and panic snapshots are evaluated; failure counter incremented
+            // once if neither matches. Prevents brute-forcing a 4-digit panic code while the long
+            // PIN absorbs the lockout (without this, ~10 000 panic probes were possible without
+            // tripping the exponential cool-down).
+            val panicSnap = securityStore.panicSnapshot()
+            val panicMatches = panicSnap != null &&
+                matches(candidate, panicSnap.salt, panicSnap.hash, panicSnap.iterations)
+            if (panicMatches) {
+                _state.value = LockState.PanicDecoy
+                securityStore.setFailCount(0)
+                securityStore.setLastUnlock(now)
+                return@withLock LockState.PanicDecoy
+            }
 
-        val snap = securityStore.pinSnapshot()
-            ?: return@withContext LockState.Disabled.also { _state.value = it }
+            val snap = securityStore.pinSnapshot()
+                ?: run {
+                    // BR-1: pinSnapshot null but lockMode != OFF means an inconsistent state
+                    // (mid-wipe crash, tainted DataStore restore). Fail-closed to Locked rather
+                    // than silently unlocking the app by falling through to Disabled.
+                    _state.value = LockState.Locked
+                    return@withLock LockState.Locked
+                }
 
-        if (matches(candidate, snap.salt, snap.hash, snap.iterations)) {
-            securityStore.setFailCount(0)
-            securityStore.setLockoutUntil(0L)
-            securityStore.setLastUnlock(now)
-            _state.value = LockState.Unlocked
-            LockState.Unlocked
-        } else {
-            val newFail = (securityStore.failCount.first() + 1).coerceAtMost(MAX_FAIL_TRACKED)
-            securityStore.setFailCount(newFail)
-            if (newFail >= LOCKOUT_THRESHOLD) {
-                val delayMs = backoffMillis(newFail - LOCKOUT_THRESHOLD)
-                val until = now + delayMs
-                securityStore.setLockoutUntil(until)
-                _state.value = LockState.LockedOut(until)
-                LockState.LockedOut(until)
+            if (matches(candidate, snap.salt, snap.hash, snap.iterations)) {
+                securityStore.setFailCount(0)
+                securityStore.setLockoutUntil(0L)
+                securityStore.setLastUnlock(now)
+                _state.value = LockState.Unlocked
+                LockState.Unlocked
             } else {
-                _state.value = LockState.Locked
-                LockState.Locked
+                val newFail = (securityStore.failCount.first() + 1).coerceAtMost(MAX_FAIL_TRACKED)
+                securityStore.setFailCount(newFail)
+                if (newFail >= LOCKOUT_THRESHOLD) {
+                    val delayMs = backoffMillis(newFail - LOCKOUT_THRESHOLD)
+                    val until = now + delayMs
+                    securityStore.setLockoutUntil(until)
+                    _state.value = LockState.LockedOut(until)
+                    LockState.LockedOut(until)
+                } else {
+                    _state.value = LockState.Locked
+                    LockState.Locked
+                }
             }
         }
     }

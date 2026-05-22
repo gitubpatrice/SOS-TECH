@@ -90,6 +90,19 @@ class SecurityStore @Inject constructor(@ApplicationContext private val context:
     suspend fun setLastUnlock(ts: Long) = context.secStore.edit { it[K.lastUnlock] = ts }
     val lastUnlock: Flow<Long> = context.secStore.data.map { it[K.lastUnlock] ?: 0L }
 
+    /**
+     * SEC-3: Reactive flows for PIN and panic configuration state.
+     * Used by SettingsViewModel to accurately expose `isPinConfigured` and
+     * `isPanicConfigured` without querying DataStore on demand.
+     */
+    val hasPin: Flow<Boolean> = context.secStore.data.map { p ->
+        p[K.pinSalt] != null && p[K.pinHash] != null && p[K.pinIters] != null
+    }
+
+    val hasPanic: Flow<Boolean> = context.secStore.data.map { p ->
+        p[K.panicSalt] != null && p[K.panicHash] != null && p[K.panicIters] != null
+    }
+
     private object K {
         val pinSalt = byteArrayPreferencesKey("pin.salt")
         val pinHash = byteArrayPreferencesKey("pin.hash")

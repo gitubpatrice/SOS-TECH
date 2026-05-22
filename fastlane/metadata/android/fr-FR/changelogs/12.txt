@@ -1,0 +1,8 @@
+v0.3.1 — Renforcement audit sécurité.
+
+- Hashes PIN exclus du backup cloud (blocage brute-force offline).
+- Refus du code panique identique au PIN principal (anti self-lockout).
+- État panique configuré reflété correctement dans les paramètres.
+- Verrouillage fermé en cas d'état incohérent post-wipe.
+- Mutex sur tentatives concurrentes de déverrouillage.
+- Bouton URGENCE SMS : ordre interne durci.

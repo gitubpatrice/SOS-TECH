@@ -33,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +50,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.filestech.sos.R
 import com.filestech.sos.security.AppLockManager
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -62,7 +60,6 @@ fun LockScreen(
     val isBiometricEnabled by viewModel.isBiometricEnabled.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHost = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     // PIN field state — String for UI, converted to CharArray on submit
     var pin by remember { mutableStateOf("") }
@@ -77,6 +74,9 @@ fun LockScreen(
 
     LaunchedEffect(lockState) {
         val state = lockState
+        // UI-2: reset isSubmitting on any state transition — covers success (Unlocked /
+        // PanicDecoy) where the screen is about to disappear, and lockout transitions.
+        isSubmitting = false
         if (state is AppLockManager.LockState.LockedOut) {
             countdownMs = state.until - System.currentTimeMillis()
             while (countdownMs > 0) {
@@ -115,11 +115,10 @@ fun LockScreen(
         isSubmitting = true
         val pinArray = pin.toCharArray()
         pin = "" // clear UI field before async work
+        // UI-2: no fixed 500 ms delay. isSubmitting is reset by:
+        //  - LockEvent.InvalidPin handler (wrong PIN or lockout)
+        //  - LaunchedEffect(lockState) below when state transitions (success / lockout)
         viewModel.attemptUnlock(pinArray)
-        scope.launch {
-            delay(500L)
-            isSubmitting = false
-        }
     }
 
     Scaffold(

@@ -272,9 +272,12 @@ private fun UrgenceHoldButton(
             progress = (elapsed / 3000f).coerceAtMost(1f)
             delay(16) // ~60fps
             if (progress >= 1f && isHolding) {
+                // UI-1: reset isHolding BEFORE calling onTriggered() to shrink the re-trigger
+                // window. Defense-in-depth — EmergencyViewModel.triggerInFlight AtomicBoolean
+                // also guards against double-dispatch.
+                isHolding = false
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onTriggered()
-                isHolding = false
                 break
             }
         }
