@@ -26,7 +26,7 @@ stays on the device.
 
 | Adversary | What we protect against | How |
 |---|---|---|
-| Device-level adb pull / forensic image | Call logs, encrypted recordings, contact list | SQLCipher DB (alias `sos_db_master` — v0.2). Recording vault key under Keystore alias `sos_recording_kek`. |
+| Device-level adb pull / forensic image | Call logs, encrypted recordings, contact list | SQLCipher DB encrypted with 32-byte random key wrapped by Keystore alias `sostech_db_master` (AES-256-GCM). Recording vault payloads encrypted under Keystore alias `sostech_recording_kek` (v0.2 wiring). |
 | Lost / stolen phone (no PIN known) | Access to emergency contacts and recordings | App lock (PIN / biometric, opt-in). FLAG_SECURE on all screens. |
 | Pocket-dial to emergency services | Accidental call via UI tap | Default call behavior = HOLD_3S_DIRECT_CALL. TAP_DIRECT_CALL requires explicit opt-in + CALL_PHONE granted. Anti-spam cooldown (5 s monotonic) on EmergencyCallHelper. |
 | Double-trigger race on emergency SMS button | Two simultaneous SMS sends | `AtomicBoolean triggerInFlight` compareAndSet guard in EmergencyViewModel. |
@@ -40,16 +40,27 @@ stays on the device.
 
 ---
 
-## Cryptographic primitives (v0.1 — placeholder, v0.2 will complete)
+## Cryptographic primitives
 
 | Concern | Primitive | Key source | Status |
 |---|---|---|---|
-| Room database at rest | SQLCipher v4 | TODO v0.2: 32-byte random passphrase wrapped by Keystore alias `sos_db_master` | Placeholder passphrase in v0.1 — MUST be replaced before production data |
-| Recording vault | AES-256-GCM | Keystore alias `sos_recording_kek` | Structural anchor v0.1 — full impl in v0.2 |
-| App-lock PIN | PBKDF2-HMAC-SHA512 | User secret + 16-byte random salt, ≥ 210k iterations | TODO v0.2 (same pattern as SMS Tech AppLockManager) |
-| Settings DataStore | Plain JSON (no AEAD) | — | TODO v0.2: wrap sensitive prefs under Keystore AEAD |
+| Room database at rest | SQLCipher v4 (`SupportOpenHelperFactory`) | 32-byte random passphrase, wrapped AES-256-GCM by Keystore alias `sostech_db_master`; wrapped blob persisted at `<files>/db/master.key` (`[version:1][iv:12][ct+tag:N]`); raw key wiped from JVM memory immediately after Room consumes it | **v0.1 — implemented** (`DatabaseFactory` + `DatabaseKeyManager`) |
+| AEAD primitive | AES-256-GCM, 12-byte IV, 128-bit tag, envelope versioned (`AeadCipher`) | Keystore-bound `SecretKey` (hardware-backed when available) OR caller-supplied 32-byte raw key | **v0.1 — implemented** |
+| Recording vault | AES-256-GCM | Keystore alias `sostech_recording_kek` | Structural anchor v0.1 — full impl in v0.2 (MediaRecorder + per-recording payload encryption) |
+| App-lock PIN | PBKDF2-HMAC-SHA512 | User secret + 16-byte random salt, ≥ 210k iterations | TODO v0.2 (same pattern as SMS Tech `AppLockManager`) |
+| Settings DataStore | Plain JSON (no AEAD) | — | TODO v0.2: wrap sensitive prefs under Keystore alias `sostech_settings_aead` |
+| Panic-mode decoy | AES-256-GCM | Keystore alias `sostech_panic_decoy` (separate from `sostech_db_master`) | TODO v0.2 (port from SMS Tech `PanicService`) |
 
-All Keystore keys will be non-exportable and hardware-backed when available.
+All Keystore keys are non-exportable, hardware-backed when available, and use `setRandomizedEncryptionRequired(false)` because IVs are generated cryptographically at the call site (96-bit SecureRandom — never reused).
+
+### Failure modes (DB key)
+
+`DatabaseKeyManager.Failure` is a sealed exception hierarchy. The DI graph propagates these
+typed failures up to `MainActivity` rather than silently re-keying or dropping data:
+
+- **`KeystoreInvalidated`** — credential change, biometric re-enrollment, or Knox reset wiped the AndroidKeyStore alias. Existing wrapped key cannot be recovered. *Future recovery UI will offer: reset wallet (lose data) or keep encrypted blob for offline forensic recovery.*
+- **`WrapCorrupted`** — Keystore is healthy but AEAD decryption of the wrapped key blob failed (file corruption). The key file is **NOT auto-deleted** — silent wipe would equal silent data loss.
+- **`Io`** — read/write failure on `<files>/db/master.key`. Usually a transient storage condition; retry on next boot.
 
 ---
 
@@ -110,13 +121,22 @@ SOS Tech cannot and does not verify that consent was obtained.
 
 ## Audit history
 
-### v0.1.0 (this release) — Initial scaffold
+### v0.1.0 (this release) — Initial scaffold + Keystore-derived SQLCipher key
 
 Foundation: 7 feature contracts (voice, cascade, siren, live GPS, recording, webhook, contacts),
 EmergencyScreen with 4 call tiles (112/15/17/18 + trusted contact), emergency SMS trigger,
 dry-run preview, kill-switch disable, SettingsScreen with per-feature toggles.
 
-Security review: all conservative defaults verified in `AuditV001Test` (13 tests green):
+**Crypto hardening (post initial scaffold, same tag)** — the SQLCipher passphrase placeholder
+flagged as the v0.1 critical TODO has been **replaced before the tag closes**. SOS Tech v0.1.0
+now derives the SQLCipher key from a 32-byte SecureRandom value wrapped by AndroidKeyStore alias
+`sostech_db_master` (AES-256-GCM, versioned envelope). The raw key is wiped from JVM memory
+immediately after Room consumes the factory. Typed `DatabaseKeyManager.Failure` propagates
+Keystore invalidation distinctly from wrap corruption, avoiding silent data loss.
+
+Security review: all conservative defaults verified in `AuditV001Test` (**21 tests green** — was 13):
+
+Defaults:
 - All features OFF by default
 - Default call behavior = HOLD_3S_DIRECT_CALL (not TAP)
 - FLAG_SECURE ON by default
@@ -127,10 +147,20 @@ Security review: all conservative defaults verified in `AuditV001Test` (13 tests
 - Cascade noAnswerTimeout = 10 s
 - Webhook GPS opt-in = false by default
 
+Crypto invariants (new):
+- 4 Keystore aliases SOS-namespaced, pairwise distinct (`sostech_db_master`, `sostech_recording_kek`, `sostech_settings_aead`, `sostech_panic_decoy`)
+- AES key size = 256 bits
+- AEAD envelope = `AES/GCM/NoPadding` + 12-byte IV + 128-bit tag, version byte `0x01`
+- AEAD raw round-trip preserves plaintext + GCM tag rejects bit-flips
+- AEAD rejects unsupported envelope versions
+- `ByteArray.wipe()` zeroes buffer in place
+- DB filename namespaced (`sos_tech.db`)
+
 Known limitations in v0.1:
-- SQLCipher passphrase is a placeholder — MUST be replaced with Keystore-derived key in v0.2
 - No app lock implemented yet (v0.2)
 - All 7 extended features are stubs (contracts + UI screens ready, no implementation)
+- Settings DataStore not yet AEAD-wrapped (v0.2)
+- Panic-mode decoy KeyStore alias declared but not wired (v0.2)
 
 ---
 
