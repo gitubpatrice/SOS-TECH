@@ -1,6 +1,6 @@
 # SOS Tech — Security model
 
-Current release : **v0.3.2** (2026-05-22)
+Current release : **v0.4.0** (2026-05-22)
 
 This document describes the threat model SOS Tech protects against, the cryptographic
 primitives it uses, the architectural choices that make those primitives meaningful,
@@ -120,6 +120,31 @@ SOS Tech cannot and does not verify that consent was obtained.
 ---
 
 ## Audit history
+
+### v0.4.0 — Webhook dispatcher (first outbound network)
+
+First real out-bound network call. Payload is minimal by design.
+
+- **OkHttp 4.12.0** added (Apache-2.0, F-Droid compliant). Only used when `webhook.enabled = true`.
+- **`WebhookDispatcherImpl`**: POST to user-configured URL. Retry up to 3 times with 1s/2s/4s
+  exponential backoff (cap 8 s). 4xx = no retry. Timeout: connect 10 s, read 15 s, write 15 s.
+  `retryOnConnectionFailure = false` (retry loop explicit, not OkHttp implicit).
+- **Payload**: `{"trigger":"emergency","ts":<epochMs>}` + optional `"lat"/"lng"` (5 decimals,
+  Locale.US separator). No contact names, no phone numbers, no SMS body ever included.
+- **Fire-and-forget**: webhook is dispatched in a `launch` child coroutine — the emergency flow
+  completes immediately without waiting for the HTTP round-trip. No UI feedback on webhook result.
+- **URL validation**: scheme must be `https://` or `http://` — other schemes rejected with
+  `AppError.Validation` before any network call is made.
+- **URL not logged**: user-configured URL may embed a shared secret in query params; Timber calls
+  omit the URL entirely.
+- **WebhookDispatcherStub removed**: no dead code. `StubImpls.kt` no longer contains a webhook stub.
+- **SettingsScreen webhook section enriched**: OutlinedTextField URL + GPS toggle visible when
+  enabled. URL validated inline (red border if not http(s)://).
+- **Settings DataStore**: `WebhookConfig.url` + `.includeGps` already declared in v0.1;
+  no schema migration needed.
+
+Tests: `AuditV040Test` 20 new regression tests. Total **90 / 90 green** (expected).
+`lintVitalRelease` clean. `assembleRelease` successful.
 
 ### v0.3.2 — Audit bloc 2 (domain layer purity, shared settings flow, failCount upfront)
 

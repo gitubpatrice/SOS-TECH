@@ -4,13 +4,16 @@ import android.os.SystemClock
 import com.filestech.sos.core.result.Outcome
 import com.filestech.sos.data.local.datastore.SettingsRepository
 import com.filestech.sos.data.location.LocationResolver
+import com.filestech.sos.data.messaging.EmergencyMessageRenderer
 import com.filestech.sos.di.IoDispatcher
 import com.filestech.sos.domain.contact.EmergencyContactRepository
-import com.filestech.sos.data.messaging.EmergencyMessageRenderer
 import com.filestech.sos.domain.emergency.PanicGuard
 import com.filestech.sos.domain.model.PhoneAddress
+import com.filestech.sos.domain.webhook.WebhookDispatcher
+import com.filestech.sos.domain.webhook.WebhookPayload
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -30,21 +33,19 @@ import javax.inject.Inject
  *                      `(position non disponible)` fallback in the body.
  *  5. Render body    — via [com.filestech.sos.domain.emergency.EmergencyTemplate] from settings.
  *                      Blank body → `Result.EmptyBody` (corrupted template).
- *  6. Dispatch       — per-contact via [SendSmsUseCase]. Each contact is independent: one
+ *  6. Dispatch SMS   — per-contact via [SendSmsUseCase]. Each contact is independent: one
  *                      failed dispatch does not abort the rest.
- *  7. Cooldown stamp — wall+monotonic `lastTriggeredAt` persisted to settings on every trigger
+ *  7. Webhook        — if `webhook.enabled && url.isNotBlank()`, fire-and-forget POST via
+ *                      [WebhookDispatcher]. Does not block the main trigger path. No feedback
+ *                      to UI (privacy + UX: SMS remains the primary channel).
+ *  8. Cooldown stamp — wall+monotonic `lastTriggeredAt` persisted to settings on every trigger
  *                      attempt that reached dispatch (regardless of sent/failed counts).
- *
- * **Non-goals** for v0.2:
- *  - Cascade auto-call (separate `CascadeDialer` contract, stub).
- *  - Siren, flash, live GPS worker, recording, webhook — all stubs.
- *  - Calling each contact in priority order — only `cascadePriority`-ordered SMS in v0.2.
- *    Call cascade is wired in v0.3 via the real `CascadeDialer`.
  *
  * Logging rules:
  *  - Phone numbers are **never** logged in clear.
  *  - Lat/lon are **never** logged (only "hadLocation=true/false").
  *  - Body content is **never** logged (only `bodyLen=N`).
+ *  - Webhook URL is **never** logged (may contain shared secret in query param).
  */
 class TriggerEmergencyUseCase @Inject constructor(
     private val sendSms: SendSmsUseCase,
@@ -53,6 +54,7 @@ class TriggerEmergencyUseCase @Inject constructor(
     private val panicGuard: PanicGuard,
     private val locationResolver: LocationResolver,
     private val messageRenderer: EmergencyMessageRenderer,
+    private val webhookDispatcher: WebhookDispatcher,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) {
 
@@ -84,12 +86,13 @@ class TriggerEmergencyUseCase @Inject constructor(
             return@withContext Result.NoContacts
         }
 
-        val locationUrl: String? = if (emergency.includeLocation) {
+        // Resolve location once; reuse for both SMS body and optional webhook GPS payload.
+        val currentLocation = if (emergency.includeLocation) {
             runCatching { locationResolver.getCurrentLocation() }
                 .onFailure { Timber.w(it, "TriggerEmergencyUseCase: location resolve threw") }
                 .getOrNull()
-                ?.let { loc -> formatMapsUrl(loc.latitude, loc.longitude) }
         } else null
+        val locationUrl = currentLocation?.let { loc -> formatMapsUrl(loc.latitude, loc.longitude) }
         val hadLocation = locationUrl != null
 
         val body = messageRenderer.render(emergency.template, locationUrl).trim()
@@ -98,7 +101,7 @@ class TriggerEmergencyUseCase @Inject constructor(
             return@withContext Result.EmptyBody
         }
 
-        // Order by cascadePriority (ascending; 0 = "not in cascade" but still messaged in v0.2).
+        // Order by cascadePriority (ascending; 0 = "not in cascade" but still messaged).
         val ordered = list.sortedWith(compareBy({ it.cascadePriority }, { it.addedAtMs }))
         val recipients = ordered.map { PhoneAddress.of(it.phoneNumber) }
             .filter { it.isValidDispatchTarget }
@@ -129,6 +132,22 @@ class TriggerEmergencyUseCase @Inject constructor(
                     monotonicLastTriggeredAt = monoNow,
                 ),
             )
+        }
+
+        // Webhook: fire-and-forget if opted-in. Does NOT block the caller — the emergency
+        // flow must not wait for a potentially slow HTTP round-trip (up to 3 × 15 s timeouts).
+        if (snapshot.webhook.enabled && snapshot.webhook.url.isNotBlank()) {
+            launch {
+                webhookDispatcher.dispatch(
+                    WebhookPayload(
+                        url = snapshot.webhook.url,
+                        timestampMs = wallNow,
+                        includeGps = snapshot.webhook.includeGps,
+                        latitude = if (snapshot.webhook.includeGps) currentLocation?.latitude else null,
+                        longitude = if (snapshot.webhook.includeGps) currentLocation?.longitude else null,
+                    )
+                )
+            }
         }
 
         Timber.i("TriggerEmergencyUseCase: done sent=%d failed=%d hadLocation=%s", sent, failed, hadLocation)

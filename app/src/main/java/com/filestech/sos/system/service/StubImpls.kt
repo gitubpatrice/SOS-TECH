@@ -4,18 +4,16 @@ import com.filestech.sos.core.result.AppError
 import com.filestech.sos.core.result.Outcome
 import com.filestech.sos.domain.cascade.CascadeDialer
 import com.filestech.sos.domain.recording.CallLogEntry
-import com.filestech.sos.domain.recording.CallOutcome
 import com.filestech.sos.domain.recording.RecordingController
 import com.filestech.sos.domain.siren.SirenController
-import com.filestech.sos.domain.webhook.WebhookDispatcher
-import com.filestech.sos.domain.webhook.WebhookPayload
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Stub implementations for v0.1.
- * All return [Outcome.Failure] with [AppError.NotImplemented] so callers can handle gracefully.
- * Replaced in v0.2+ with real implementations.
+ * Stub implementations for features not yet backed by real code.
+ * All return [Outcome.Failure] with [AppError.NotImplemented] so callers handle gracefully.
+ *
+ * WebhookDispatcherStub removed in v0.4 — replaced by [com.filestech.sos.data.webhook.WebhookDispatcherImpl].
  */
 
 @Singleton
@@ -44,10 +42,4 @@ class RecordingControllerStub @Inject constructor() : RecordingController {
         Outcome.Failure(AppError.NotImplemented("recording"))
 
     override fun isRecording(): Boolean = recording
-}
-
-@Singleton
-class WebhookDispatcherStub @Inject constructor() : WebhookDispatcher {
-    override suspend fun dispatch(payload: WebhookPayload): Outcome<Unit> =
-        Outcome.Failure(AppError.NotImplemented("webhook"))
 }

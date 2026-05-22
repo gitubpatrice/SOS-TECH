@@ -1,6 +1,7 @@
 package com.filestech.sos.di
 
 import com.filestech.sos.data.repository.EmergencyContactRepositoryImpl
+import com.filestech.sos.data.webhook.WebhookDispatcherImpl
 import com.filestech.sos.domain.cascade.CascadeDialer
 import com.filestech.sos.domain.contact.EmergencyContactRepository
 import com.filestech.sos.domain.emergency.AppLockPanicGuard
@@ -11,7 +12,6 @@ import com.filestech.sos.domain.webhook.WebhookDispatcher
 import com.filestech.sos.system.service.CascadeDialerStub
 import com.filestech.sos.system.service.RecordingControllerStub
 import com.filestech.sos.system.service.SirenControllerStub
-import com.filestech.sos.system.service.WebhookDispatcherStub
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -31,8 +31,9 @@ abstract class RepositoryModule {
     @Binds @Singleton
     abstract fun bindRecordingController(impl: RecordingControllerStub): RecordingController
 
+    // v0.4: real OkHttp implementation replacing WebhookDispatcherStub.
     @Binds @Singleton
-    abstract fun bindWebhookDispatcher(impl: WebhookDispatcherStub): WebhookDispatcher
+    abstract fun bindWebhookDispatcher(impl: WebhookDispatcherImpl): WebhookDispatcher
 
     @Binds @Singleton
     abstract fun bindEmergencyContactRepository(impl: EmergencyContactRepositoryImpl): EmergencyContactRepository

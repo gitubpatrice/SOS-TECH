@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -232,6 +233,18 @@ fun SettingsScreen(
                 checked = state.webhookEnabled,
                 onToggle = { viewModel.toggleWebhook(it) },
             )
+            if (state.webhookEnabled) {
+                WebhookUrlField(
+                    url = state.webhookUrl,
+                    onUrlChange = { viewModel.setWebhookUrl(it) },
+                )
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_webhook_include_gps_title),
+                    subtitle = stringResource(R.string.settings_webhook_include_gps_desc),
+                    checked = state.webhookIncludeGps,
+                    onToggle = { viewModel.toggleWebhookIncludeGps(it) },
+                )
+            }
 
             HorizontalDivider()
             SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
@@ -457,6 +470,45 @@ private fun PanicSetupDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
+}
+
+// ---- Webhook URL field ----
+
+@Composable
+private fun WebhookUrlField(
+    url: String,
+    onUrlChange: (String) -> Unit,
+) {
+    // Local draft: commit to ViewModel on focus-loss (keyboard done / field unfocused).
+    // Using rememberSaveable so the draft survives rotation without a DataStore round-trip.
+    var draft by rememberSaveable { mutableStateOf(url) }
+    // Sync incoming state → draft only when the external value changes (e.g. initial load).
+    LaunchedEffect(url) { if (draft != url) draft = url }
+
+    val isInvalid = draft.isNotBlank() &&
+        !draft.startsWith("https://") && !draft.startsWith("http://")
+
+    OutlinedTextField(
+        value = draft,
+        onValueChange = { draft = it },
+        label = { Text(stringResource(R.string.settings_webhook_url_label)) },
+        placeholder = { Text("https://example.com/webhook") },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
+        singleLine = true,
+        isError = isInvalid,
+        supportingText = if (isInvalid) {
+            { Text(stringResource(R.string.settings_webhook_url_invalid)) }
+        } else null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+
+    // Persist on every keystroke after debounce is complex — simpler: persist when field leaves
+    // focus. Compose does not expose onFocusLost directly on OutlinedTextField, so we listen to
+    // the draft change and commit immediately. Round-trips are cheap (DataStore async).
+    // The field is inside a lazily-shown block (webhookEnabled = true) so re-compositions are rare.
+    LaunchedEffect(draft) { onUrlChange(draft) }
 }
 
 // ---- Shared composables ----

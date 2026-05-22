@@ -35,7 +35,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = gitCommitCount.coerceAtLeast(1)
-        versionName = "0.3.2"
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -203,6 +203,9 @@ dependencies {
 
     // SQLCipher — vault recordings + call logs
     implementation(libs.sqlcipher.android)
+
+    // OkHttp — webhook dispatcher
+    implementation(libs.okhttp)
 
     // Logging
     implementation(libs.timber)

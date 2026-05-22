@@ -1,0 +1,5 @@
+v0.4.0 — Webhook dispatcher (first outbound network).
+
+- Real OkHttp POST replaces stub: retry 3x with exponential backoff.
+- Payload: trigger + timestamp + optional GPS. No PII ever sent.
+- Settings: URL field + GPS toggle visible when webhook is enabled.

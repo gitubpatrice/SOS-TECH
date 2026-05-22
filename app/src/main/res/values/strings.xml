@@ -114,7 +114,11 @@
     <string name="settings_recording_legal_warning">WARNING: Recording calls without the consent of all parties is illegal in France (art. 226-15 Penal Code). You are solely responsible for obtaining consent.</string>
 
     <string name="settings_webhook_enabled_title">Enable webhook</string>
-    <string name="settings_webhook_enabled_desc">Send a JSON alert to your configured URL when emergency is triggered (v0.2+)</string>
+    <string name="settings_webhook_enabled_desc">Send a minimal JSON alert to your configured URL when an emergency is triggered</string>
+    <string name="settings_webhook_url_label">Webhook URL</string>
+    <string name="settings_webhook_url_invalid">URL must start with https:// or http://</string>
+    <string name="settings_webhook_include_gps_title">Include GPS in payload</string>
+    <string name="settings_webhook_include_gps_desc">Add latitude and longitude to the JSON payload (only if a GPS fix is available at trigger time)</string>
 
     <string name="settings_flag_secure_title">Secure screen (FLAG_SECURE)</string>
     <string name="settings_flag_secure_desc">Prevent screenshots and hide app content in recent apps preview</string>

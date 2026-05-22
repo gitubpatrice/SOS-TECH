@@ -41,6 +41,8 @@ data class SettingsUiState(
     val liveGpsEnabled: Boolean = false,
     val recordingEnabled: Boolean = false,
     val webhookEnabled: Boolean = false,
+    val webhookUrl: String = "",
+    val webhookIncludeGps: Boolean = false,
     val flagSecure: Boolean = true,
     val emergencyTemplate: EmergencyTemplate = EmergencyTemplate.NEED_HELP,
     val emergencyIncludeLocation: Boolean = false,
@@ -69,6 +71,8 @@ class SettingsViewModel @Inject constructor(
             liveGpsEnabled = s.liveGps.enabled,
             recordingEnabled = s.recording.enabled,
             webhookEnabled = s.webhook.enabled,
+            webhookUrl = s.webhook.url,
+            webhookIncludeGps = s.webhook.includeGps,
             flagSecure = s.security.flagSecure,
             emergencyTemplate = s.emergency.template,
             emergencyIncludeLocation = s.emergency.includeLocation,
@@ -116,6 +120,14 @@ class SettingsViewModel @Inject constructor(
 
     fun toggleWebhook(enabled: Boolean) = update { s ->
         s.copy(webhook = s.webhook.copy(enabled = enabled))
+    }
+
+    fun setWebhookUrl(url: String) = update { s ->
+        s.copy(webhook = s.webhook.copy(url = url.trim()))
+    }
+
+    fun toggleWebhookIncludeGps(enabled: Boolean) = update { s ->
+        s.copy(webhook = s.webhook.copy(includeGps = enabled))
     }
 
     fun toggleFlagSecure(enabled: Boolean) = update { s ->

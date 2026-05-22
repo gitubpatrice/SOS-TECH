@@ -1,0 +1,5 @@
+v0.4.0 — Dispatcher webhook (premier appel réseau sortant).
+
+- POST OkHttp réel remplace le stub : jusqu'à 3 tentatives avec backoff exponentiel.
+- Payload : déclenchement + horodatage + GPS optionnel. Aucune donnée personnelle envoyée.
+- Paramètres : champ URL + toggle GPS visibles quand le webhook est activé.

@@ -114,7 +114,11 @@
     <string name="settings_recording_legal_warning">AVERTISSEMENT : Enregistrer un appel sans le consentement de tous les interlocuteurs est illégal en France (art. 226-15 du Code pénal). Vous êtes seul responsable d\'obtenir ce consentement.</string>
 
     <string name="settings_webhook_enabled_title">Activer le webhook</string>
-    <string name="settings_webhook_enabled_desc">Envoie une alerte JSON à votre URL configurée lors d\'un déclenchement d\'urgence (v0.2+)</string>
+    <string name="settings_webhook_enabled_desc">Envoie une alerte JSON minimale à votre URL configurée lors d\'un déclenchement d\'urgence</string>
+    <string name="settings_webhook_url_label">URL du webhook</string>
+    <string name="settings_webhook_url_invalid">L\'URL doit commencer par https:// ou http://</string>
+    <string name="settings_webhook_include_gps_title">Inclure le GPS dans le payload</string>
+    <string name="settings_webhook_include_gps_desc">Ajoute la latitude et la longitude au payload JSON (uniquement si un fix GPS est disponible au moment du déclenchement)</string>
 
     <string name="settings_flag_secure_title">Écran sécurisé (FLAG_SECURE)</string>
     <string name="settings_flag_secure_desc">Empêche les captures d\'écran et masque le contenu dans les applications récentes</string>
