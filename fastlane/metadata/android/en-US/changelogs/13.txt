@@ -1,0 +1,5 @@
+v0.3.2 — Audit bloc 2 (3 fixes).
+
+- EmergencyMessageRenderer moved to data layer (domain purity).
+- Settings flow shared via StateFlow Eagerly (single DataStore subscription).
+- failCount incremented before PIN/panic eval (closes brute-force window).

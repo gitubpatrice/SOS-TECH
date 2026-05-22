@@ -1,0 +1,5 @@
+v0.3.2 — Audit bloc 2 (3 correctifs).
+
+- EmergencyMessageRenderer déplacé vers la couche data (pureté du domaine).
+- Flow paramètres partagé via StateFlow Eagerly (abonnement DataStore unique).
+- failCount incrémenté avant l'évaluation PIN/panique (ferme la fenêtre de brute-force).

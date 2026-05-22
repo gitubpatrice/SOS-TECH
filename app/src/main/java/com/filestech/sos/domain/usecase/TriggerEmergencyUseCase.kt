@@ -6,7 +6,7 @@ import com.filestech.sos.data.local.datastore.SettingsRepository
 import com.filestech.sos.data.location.LocationResolver
 import com.filestech.sos.di.IoDispatcher
 import com.filestech.sos.domain.contact.EmergencyContactRepository
-import com.filestech.sos.domain.emergency.EmergencyMessageRenderer
+import com.filestech.sos.data.messaging.EmergencyMessageRenderer
 import com.filestech.sos.domain.emergency.PanicGuard
 import com.filestech.sos.domain.model.PhoneAddress
 import kotlinx.coroutines.CoroutineDispatcher

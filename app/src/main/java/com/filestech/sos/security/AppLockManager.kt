@@ -196,17 +196,24 @@ class AppLockManager @Inject constructor(
                 return@withLock LockState.LockedOut(lockoutUntil).also { _state.value = it }
             }
 
-            // Audit P1-3: both PIN and panic snapshots are evaluated; failure counter incremented
-            // once if neither matches. Prevents brute-forcing a 4-digit panic code while the long
-            // PIN absorbs the lockout (without this, ~10 000 panic probes were possible without
-            // tripping the exponential cool-down).
+            // SEC-4 (v0.3.2): increment failCount BEFORE evaluating PIN or panic. This closes a
+            // brute-force path where an attacker could probe the panic code indefinitely — the panic
+            // branch previously ran before the counter increment, allowing ~LOCKOUT_THRESHOLD
+            // consecutive panic guesses with no lockout penalty.
+            // Counter is reset to 0 on any successful authentication (PIN or panic).
+            val currentFail = securityStore.failCount.first()
+            val newFail = (currentFail + 1).coerceAtMost(MAX_FAIL_TRACKED)
+            securityStore.setFailCount(newFail)
+
+            // Evaluate panic first (panic takes precedence over PIN per design).
+            // Audit P1-3: both snapshots evaluated; failure counter already incremented above.
             val panicSnap = securityStore.panicSnapshot()
             val panicMatches = panicSnap != null &&
                 matches(candidate, panicSnap.salt, panicSnap.hash, panicSnap.iterations)
             if (panicMatches) {
-                _state.value = LockState.PanicDecoy
                 securityStore.setFailCount(0)
                 securityStore.setLastUnlock(now)
+                _state.value = LockState.PanicDecoy
                 return@withLock LockState.PanicDecoy
             }
 
@@ -215,6 +222,14 @@ class AppLockManager @Inject constructor(
                     // BR-1: pinSnapshot null but lockMode != OFF means an inconsistent state
                     // (mid-wipe crash, tainted DataStore restore). Fail-closed to Locked rather
                     // than silently unlocking the app by falling through to Disabled.
+                    // Counter remains at newFail (already persisted above).
+                    if (newFail >= LOCKOUT_THRESHOLD) {
+                        val delayMs = backoffMillis(newFail - LOCKOUT_THRESHOLD)
+                        val until = now + delayMs
+                        securityStore.setLockoutUntil(until)
+                        _state.value = LockState.LockedOut(until)
+                        return@withLock LockState.LockedOut(until)
+                    }
                     _state.value = LockState.Locked
                     return@withLock LockState.Locked
                 }
@@ -226,8 +241,7 @@ class AppLockManager @Inject constructor(
                 _state.value = LockState.Unlocked
                 LockState.Unlocked
             } else {
-                val newFail = (securityStore.failCount.first() + 1).coerceAtMost(MAX_FAIL_TRACKED)
-                securityStore.setFailCount(newFail)
+                // Counter already set to newFail above. Evaluate lockout.
                 if (newFail >= LOCKOUT_THRESHOLD) {
                     val delayMs = backoffMillis(newFail - LOCKOUT_THRESHOLD)
                     val until = now + delayMs

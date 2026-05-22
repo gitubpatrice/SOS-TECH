@@ -1,15 +1,19 @@
-package com.filestech.sos.domain.emergency
+package com.filestech.sos.data.messaging
 
 import android.content.Context
 import com.filestech.sos.R
+import com.filestech.sos.domain.emergency.EmergencyTemplate
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Renders an [EmergencyTemplate] into a localized SMS body. Centralized here (rather than
- * inline in the use case) so:
- *  - The domain layer never has to depend on `Context` directly.
+ * Renders an [EmergencyTemplate] into a localized SMS body. Lives in `data/messaging/` (not
+ * `domain/emergency/`) because it carries an `@ApplicationContext` dependency — Android Context
+ * belongs to the data layer, not the domain layer.
+ *
+ * Centralized here so:
+ *  - The domain layer never depends on `Context` directly.
  *  - Tests can swap in a stub renderer to avoid Robolectric resource overhead.
  *  - The locale strategy is single-sourced: the active app locale at trigger time decides the
  *    body language — and that aligns with what the recipient's phone displays for the rendered

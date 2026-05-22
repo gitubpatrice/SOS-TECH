@@ -1,6 +1,6 @@
 # SOS Tech — Security model
 
-Current release : **v0.3.1** (2026-05-22)
+Current release : **v0.3.2** (2026-05-22)
 
 This document describes the threat model SOS Tech protects against, the cryptographic
 primitives it uses, the architectural choices that make those primitives meaningful,
@@ -120,6 +120,24 @@ SOS Tech cannot and does not verify that consent was obtained.
 ---
 
 ## Audit history
+
+### v0.3.2 — Audit bloc 2 (domain layer purity, shared settings flow, failCount upfront)
+
+3 MEDIUM findings from the v0.3.1 audit cycle closed before the tag:
+
+- **ARCH-1** — `EmergencyMessageRenderer` moved from `domain/emergency/` to `data/messaging/`.
+  It carried an `@ApplicationContext` dependency which violates domain-layer purity (domain must
+  not depend on Android Context). All callers (`TriggerEmergencyUseCase`) updated to new import.
+- **PERF-1** — `SettingsRepository.flow` converted from a cold `Flow` + redundant `_state`
+  `MutableStateFlow`+`onEach` pattern to a single `StateFlow` shared eagerly via
+  `stateIn(SharingStarted.Eagerly, scope=IO+SupervisorJob)`. Single DataStore subscription,
+  N collectors read from the cached value with zero re-parsing.
+- **SEC-4** — `AppLockManager.attemptUnlock` now increments `failCount` BEFORE evaluating PIN
+  or panic code. Previously, the panic branch ran before the counter increment, allowing
+  `~LOCKOUT_THRESHOLD` consecutive panic guesses with no lockout penalty. Counter is reset to
+  zero on any successful authentication.
+
+Tests: all 70 existing tests green. `lintVitalRelease` clean. `assembleRelease` successful.
 
 ### v0.3.1 — Audit fixes (security foundations hardening)
 
