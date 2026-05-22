@@ -2,8 +2,10 @@ package com.filestech.sos.ui.screens.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.filestech.sos.data.local.datastore.AppSettings
 import com.filestech.sos.data.local.datastore.SettingsRepository
 import com.filestech.sos.di.IoDispatcher
+import com.filestech.sos.domain.emergency.EmergencyTemplate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,6 +24,8 @@ data class SettingsUiState(
     val recordingEnabled: Boolean = false,
     val webhookEnabled: Boolean = false,
     val flagSecure: Boolean = true,
+    val emergencyTemplate: EmergencyTemplate = EmergencyTemplate.NEED_HELP,
+    val emergencyIncludeLocation: Boolean = false,
 )
 
 @HiltViewModel
@@ -41,6 +45,8 @@ class SettingsViewModel @Inject constructor(
                 recordingEnabled = s.recording.enabled,
                 webhookEnabled = s.webhook.enabled,
                 flagSecure = s.security.flagSecure,
+                emergencyTemplate = s.emergency.template,
+                emergencyIncludeLocation = s.emergency.includeLocation,
             )
         }
         .stateIn(
@@ -81,7 +87,15 @@ class SettingsViewModel @Inject constructor(
         s.copy(security = s.security.copy(flagSecure = enabled))
     }
 
-    private fun update(transform: (com.filestech.sos.data.local.datastore.AppSettings) -> com.filestech.sos.data.local.datastore.AppSettings) {
+    fun selectTemplate(template: EmergencyTemplate) = update { s ->
+        s.copy(emergency = s.emergency.copy(template = template))
+    }
+
+    fun toggleIncludeLocation(enabled: Boolean) = update { s ->
+        s.copy(emergency = s.emergency.copy(includeLocation = enabled))
+    }
+
+    private fun update(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch(io) { settings.update(transform) }
     }
 }

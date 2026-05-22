@@ -2,6 +2,12 @@
 <resources>
     <string name="app_name">SOS Tech</string>
 
+    <!-- Splash d'accueil (uniquement à la première ouverture) -->
+    <string name="splash_tagline">L\'application de sécurité personnelle qui respecte votre vie privée — sans cloud, sans tracking.</string>
+    <string name="splash_logo_content_description">Logo SOS Tech</string>
+    <string name="splash_skip_hint">Touchez l\'écran pour continuer</string>
+    <string name="splash_skip_label">Passer l\'accueil</string>
+
     <!-- Actions (vouvoiement FR) -->
     <string name="action_back">Retour</string>
     <string name="action_settings">Paramètres</string>
@@ -116,4 +122,63 @@
     <!-- Erreurs -->
     <string name="error_generic">Une erreur est survenue. Veuillez réessayer.</string>
     <string name="error_not_implemented">Cette fonctionnalité n\'est pas encore implémentée (v0.2+)</string>
+
+    <!-- === v0.2 — CRUD contacts + Trigger orchestration === -->
+
+    <!-- Liste contacts -->
+    <string name="contacts_empty_title">Aucun contact d\'urgence</string>
+    <string name="contacts_empty_body">Ajoutez au moins un proche de confiance pour que le bouton URGENCE puisse envoyer un SOS.</string>
+    <string name="contacts_add_button">Ajouter un contact</string>
+
+    <!-- Dialog contact -->
+    <string name="contact_dialog_new_title">Nouveau contact d\'urgence</string>
+    <string name="contact_dialog_edit_title">Modifier le contact d\'urgence</string>
+    <string name="contact_field_name">Nom à afficher</string>
+    <string name="contact_field_phone">Numéro de téléphone</string>
+    <string name="contact_field_priority">Priorité de cascade (1 = appelé en premier ; 0 = SMS seulement)</string>
+    <string name="contact_dialog_save">Enregistrer</string>
+
+    <!-- Validation -->
+    <string name="contact_error_name_blank">Le nom ne peut pas être vide</string>
+    <string name="contact_error_phone_invalid">Numéro de téléphone invalide</string>
+    <string name="contact_error_priority_negative">La priorité ne peut pas être négative</string>
+
+    <!-- Snackbars -->
+    <string name="contact_snack_added">Contact ajouté</string>
+    <string name="contact_snack_updated">Contact mis à jour</string>
+    <string name="contact_snack_deleted">Contact supprimé</string>
+
+    <!-- Étiquettes d'accessibilité icônes -->
+    <string name="contact_action_edit">Modifier le contact</string>
+    <string name="contact_action_delete">Supprimer le contact</string>
+
+    <!-- Confirmation suppression -->
+    <string name="contact_delete_title">Supprimer ce contact ?</string>
+    <string name="contact_delete_body">%1$s ne recevra plus de SMS d\'urgence ni d\'appel via la cascade.</string>
+    <string name="contact_delete_confirm">Supprimer</string>
+
+    <!-- Snackbars résultat trigger -->
+    <string name="emergency_trigger_success_with_location">SOS envoyé à %1$d contact(s) avec votre position GPS.</string>
+    <string name="emergency_trigger_success_no_location">SOS envoyé à %1$d contact(s) — position non disponible.</string>
+    <string name="emergency_trigger_partial">SOS envoyé à %1$d contact(s) ; %2$d échec(s).</string>
+    <string name="emergency_trigger_all_failed">Tous les envois SMS ont échoué. Vérifiez votre réseau ou la permission SMS.</string>
+    <string name="emergency_trigger_no_contacts">Aucun contact d\'urgence configuré.</string>
+    <string name="emergency_trigger_cooldown">Délai anti-spam actif — veuillez attendre avant de redéclencher.</string>
+    <string name="emergency_trigger_empty_body">Erreur interne : le message rendu est vide.</string>
+    <string name="emergency_trigger_permission_sms_required">SOS Tech a besoin de la permission SMS pour envoyer votre message d\'urgence.</string>
+
+    <!-- Paramètres — template + opt-in GPS -->
+    <string name="settings_emergency_template_title">Modèle de SMS</string>
+    <string name="settings_emergency_template_desc">Texte du SMS d\'urgence envoyé à vos proches.</string>
+    <string name="settings_emergency_template_need_help">URGENCE — j\'ai besoin d\'aide</string>
+    <string name="settings_emergency_template_danger">DANGER — situation critique</string>
+    <string name="settings_emergency_template_discreet">Discret — appelez-moi</string>
+    <string name="settings_emergency_include_location_title">Inclure la position GPS dans le SMS</string>
+    <string name="settings_emergency_include_location_desc">Ajoute une URL Google Maps à votre message d\'urgence. Nécessite la permission de localisation.</string>
+
+    <!-- Corps des modèles (GSM-7 compatible — un seul segment SMS) -->
+    <string name="emergency_template_location_fallback">(position non disponible)</string>
+    <string name="emergency_template_need_help_body">URGENCE - j\'ai besoin d\'aide. Ma position : %1$s</string>
+    <string name="emergency_template_danger_body">DANGER - situation critique, contactez-moi ou venez. Position : %1$s</string>
+    <string name="emergency_template_discreet_body">Pouvez-vous m\'appeler ? J\'ai besoin d\'aide. Position : %1$s</string>
 </resources>

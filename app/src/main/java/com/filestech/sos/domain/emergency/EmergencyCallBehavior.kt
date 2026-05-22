@@ -1,5 +1,7 @@
 package com.filestech.sos.domain.emergency
 
+import kotlinx.serialization.Serializable
+
 /**
  * Governs how the 112/15/17/18 call buttons behave.
  *
@@ -7,6 +9,7 @@ package com.filestech.sos.domain.emergency
  * (unlike SMS Tech which caps at HOLD_3S_DIRECT_CALL due to pocket-dial risk).
  * Default is HOLD_3S_DIRECT_CALL: explicit enough to prevent accidental triggers.
  */
+@Serializable
 enum class EmergencyCallBehavior {
     /** ACTION_DIAL — opens the system dialer pre-filled. No CALL_PHONE permission required. */
     DIALER_ONLY,

@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import com.filestech.sos.core.ext.redactPhone
+import com.filestech.sos.domain.emergency.EmergencyCallBehavior
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -19,7 +21,9 @@ import java.util.concurrent.atomic.AtomicLong
  *
  * Whitelist: only 112, 15, 17, 18 are accepted for emergency routing.
  * Trusted contacts are handled via [placeTrustedContactCall] — no whitelist, source is
- * controlled (DataStore contact configured by the user, not an Intent extra).
+ * controlled (DataStore contact configured by the user, not an Intent extra). Trusted-contact
+ * calls share the same anti-spam cooldown as whitelisted emergency calls to prevent
+ * pocket-dial chains immediately after an accidental 112 tap (v0.2 audit SEC-1).
  */
 object EmergencyCallHelper {
 
@@ -29,7 +33,7 @@ object EmergencyCallHelper {
     /** Single-flight guard: prevents double-trigger during a concurrent call setup. */
     private val inFlight = AtomicBoolean(false)
 
-    /** Monotonic timestamp of the last call attempt (anti-spam). */
+    /** Monotonic timestamp of the last call attempt (anti-spam). Shared across whitelisted + trusted. */
     private val lastCallMonoMs = AtomicLong(0L)
 
     /** Minimum milliseconds between two direct call attempts. */
@@ -44,7 +48,7 @@ object EmergencyCallHelper {
     fun placeEmergencyCall(
         context: Context,
         number: String,
-        behavior: com.filestech.sos.domain.emergency.EmergencyCallBehavior,
+        behavior: EmergencyCallBehavior,
     ) {
         if (number !in ALLOWED_NUMBERS) {
             Timber.w("EmergencyCallHelper: rejected non-whitelisted number '%s'", number)
@@ -55,22 +59,17 @@ object EmergencyCallHelper {
             return
         }
         try {
-            val nowMono = SystemClock.elapsedRealtime()
-            val lastMono = lastCallMonoMs.get()
-            if (lastMono > 0L && nowMono - lastMono < CALL_ANTI_SPAM_MS) {
+            if (isInCooldown()) {
                 Timber.w("EmergencyCallHelper: anti-spam cooldown active, ignoring call to %s", number)
                 return
             }
-            lastCallMonoMs.set(nowMono)
+            lastCallMonoMs.set(SystemClock.elapsedRealtime())
 
             when (behavior) {
-                com.filestech.sos.domain.emergency.EmergencyCallBehavior.DIALER_ONLY -> openDialer(context, number)
-                com.filestech.sos.domain.emergency.EmergencyCallBehavior.HOLD_3S_DIRECT_CALL,
-                com.filestech.sos.domain.emergency.EmergencyCallBehavior.TAP_DIRECT_CALL -> {
-                    if (ContextCompat.checkSelfPermission(
-                            context, android.Manifest.permission.CALL_PHONE
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
+                EmergencyCallBehavior.DIALER_ONLY -> openDialer(context, number)
+                EmergencyCallBehavior.HOLD_3S_DIRECT_CALL,
+                EmergencyCallBehavior.TAP_DIRECT_CALL -> {
+                    if (hasCallPermission(context)) {
                         executeDirectCall(context, number)
                     } else {
                         Timber.w("EmergencyCallHelper: CALL_PHONE not granted, falling back to dialer for %s", number)
@@ -85,7 +84,7 @@ object EmergencyCallHelper {
 
     /**
      * Place a call to a trusted contact. No whitelist check — source is controlled (DataStore).
-     * Still subject to single-flight + anti-spam guards.
+     * Subject to the same single-flight + anti-spam cooldown as emergency calls (v0.2 audit SEC-1).
      */
     fun placeTrustedContactCall(context: Context, phoneNumber: String) {
         if (!inFlight.compareAndSet(false, true)) {
@@ -93,10 +92,13 @@ object EmergencyCallHelper {
             return
         }
         try {
-            if (ContextCompat.checkSelfPermission(
-                    context, android.Manifest.permission.CALL_PHONE
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
+            if (isInCooldown()) {
+                Timber.w("EmergencyCallHelper: anti-spam cooldown active (trusted contact %s)", phoneNumber.redactPhone())
+                return
+            }
+            lastCallMonoMs.set(SystemClock.elapsedRealtime())
+
+            if (hasCallPermission(context)) {
                 executeDirectCall(context, phoneNumber)
             } else {
                 openDialer(context, phoneNumber)
@@ -112,7 +114,7 @@ object EmergencyCallHelper {
             val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
-        }.onFailure { Timber.e(it, "EmergencyCallHelper: failed to open dialer for %s", number) }
+        }.onFailure { Timber.e(it, "EmergencyCallHelper: failed to open dialer for %s", number.redactPhone()) }
     }
 
     private fun executeDirectCall(context: Context, number: String) {
@@ -120,6 +122,17 @@ object EmergencyCallHelper {
             val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
-        }.onFailure { Timber.e(it, "EmergencyCallHelper: direct call failed for %s, falling back to dialer", number) }
+        }.onFailure { Timber.e(it, "EmergencyCallHelper: direct call failed for %s, falling back to dialer", number.redactPhone()) }
     }
+
+    private fun isInCooldown(): Boolean {
+        val nowMono = SystemClock.elapsedRealtime()
+        val lastMono = lastCallMonoMs.get()
+        return lastMono > 0L && nowMono - lastMono < CALL_ANTI_SPAM_MS
+    }
+
+    private fun hasCallPermission(context: Context): Boolean =
+        ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.CALL_PHONE
+        ) == PackageManager.PERMISSION_GRANTED
 }

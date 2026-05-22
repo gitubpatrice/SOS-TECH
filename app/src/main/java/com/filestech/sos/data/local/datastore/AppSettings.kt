@@ -2,6 +2,7 @@ package com.filestech.sos.data.local.datastore
 
 import com.filestech.sos.domain.cascade.CascadeConfig
 import com.filestech.sos.domain.emergency.EmergencyCallBehavior
+import com.filestech.sos.domain.emergency.EmergencyTemplate
 import com.filestech.sos.domain.livegps.LiveGpsConfig
 import com.filestech.sos.domain.recording.RecordingConfig
 import com.filestech.sos.domain.voice.VoiceTriggerConfig
@@ -28,6 +29,7 @@ data class Appearance(
     val amoledTrueBlack: Boolean = false,
 )
 
+@Serializable
 enum class ThemeMode { SYSTEM, LIGHT, DARK, DARK_TECH }
 
 @Serializable
@@ -37,6 +39,7 @@ data class SecuritySettings(
     val emergencyCallBehavior: EmergencyCallBehavior = EmergencyCallBehavior.HOLD_3S_DIRECT_CALL,
 )
 
+@Serializable
 enum class LockMode { OFF, PIN, BIOMETRIC }
 
 @Serializable
@@ -45,6 +48,14 @@ data class EmergencySettings(
     val shortcutNotifEnabled: Boolean = false,
     val sirenEnabled: Boolean = false,
     val sendIAmOkSmsOnReset: Boolean = true,
+    /** Which SMS template body is rendered on trigger (NEED_HELP / DANGER / DISCREET). */
+    val template: EmergencyTemplate = EmergencyTemplate.NEED_HELP,
+    /**
+     * Whether the rendered body carries a `https://maps.google.com/?q=lat,lng` location URL.
+     * When false the body has the explicit fallback "(position non disponible)" — never silent.
+     * Default false: user must explicitly opt in to broadcasting location.
+     */
+    val includeLocation: Boolean = false,
     /** Epoch ms of last trigger. 0 = never triggered. */
     val lastTriggeredAt: Long = 0L,
     /** Monotonic ms of last trigger (anti-clock-manipulation). */
@@ -56,4 +67,10 @@ data class EmergencySettings(
 @Serializable
 data class AdvancedSettings(
     val keepAliveService: Boolean = false,
+    /**
+     * Persisted flag set after the user has seen the welcome splash exactly once.
+     * Subsequent launches skip the splash entirely. Resetting this requires
+     * "Clear app data" in system Settings.
+     */
+    val splashShown: Boolean = false,
 )

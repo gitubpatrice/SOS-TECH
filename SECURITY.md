@@ -1,6 +1,6 @@
 # SOS Tech — Security model
 
-Current release : **v0.1.0** (2026-05-22)
+Current release : **v0.2.0** (2026-05-22)
 
 This document describes the threat model SOS Tech protects against, the cryptographic
 primitives it uses, the architectural choices that make those primitives meaningful,
@@ -121,7 +121,30 @@ SOS Tech cannot and does not verify that consent was obtained.
 
 ## Audit history
 
-### v0.1.0 (this release) — Initial scaffold + Keystore-derived SQLCipher key
+### v0.2.0 (this release) — First usable emergency path + multi-axis audit
+
+Foundations livered:
+- **Emergency contacts** CRUD persisted in SQLCipher Room DB (alias `sostech_db_master`). Validation chain: bidi/zero-width strip on name, digit enforcement on phone, non-negative priority, id > 0 on update.
+- **`SendSmsUseCase`** + **`SmsDispatcher`** — multi-part split via `divideMessage`, runtime SEND_SMS check, `Outcome<Int>` aggregating per-recipient successes. **Logs redact phone numbers** (prefix + suffix only).
+- **`LocationResolver`** ported from SMS Tech — no Google Play Services, single-fix with 8 s timeout, fresh `lastKnown` (≤ 5 min) cached, `removeUpdates` on every exit path including SecurityException. F-Droid-clean.
+- **`TriggerEmergencyUseCase`** orchestration: `PanicGuard` → dual-clock cooldown (wall + monotonic) → contacts load → optional GPS → localized body render → per-recipient dispatch → cooldown stamp.
+- **`EmergencyMessageRenderer`** — Locale-aware via `Context.getString`, lifts hardcoded FR text out of the enum.
+- **First-launch welcome splash** with idempotent dismiss guard (`AtomicBoolean`), eager-shared `shouldShow` (no flash for returning users).
+- **Settings**: SMS template picker (NEED_HELP / DANGER / DISCREET), GPS-in-SMS toggle (default off).
+
+Pre-commit audit (multi-axis: security + perf + Kotlin quality + UI/Compose + architecture + cohérence cross-app + branchements + vulnerabilities) — **all HIGH/MEDIUM findings fixed before tag**:
+
+- **SEC** — `EmergencyCallHelper.placeTrustedContactCall` now consults the same anti-spam cooldown as `placeEmergencyCall` (pocket-dial chain prevention).
+- **SEC** — `Timber` failure logs in `openDialer` / `executeDirectCall` now redact the phone number.
+- **ARCH** — `EmergencyTemplate`, `EmergencyCallBehavior`, `ThemeMode`, `LockMode` annotated `@Serializable` (lock kotlinx-serialization behavior explicitly).
+- **COH** — `HomeViewModel.contactsConfigured` wired to repo (was hard-coded `false` v0.1).
+- **A11Y** — `IconButton` Edit/Delete in `ContactsScreen` carry `contentDescription` (TalkBack-safe destructive actions).
+- **DRY** — removed dead `SirenControllerStub` duplicate in `domain/siren/`, dead `withBrandSnackbar()` in `theme/Color.kt`, orphan `contacts_count_*` strings.
+- **KOTLIN** — simplified `priorityText` state (single source of truth), removed redundant `io` dispatcher in `ContactsViewModel`, replaced fully-qualified `EmergencyCallBehavior` references with import.
+
+Tests: 34 / 34 green (`AuditV001Test` 21 + `AuditV020Test` 13). `lintVitalRelease` clean. `assembleRelease` produces 4 unsigned APK splits.
+
+### v0.1.0 — Initial scaffold + Keystore-derived SQLCipher key
 
 Foundation: 7 feature contracts (voice, cascade, siren, live GPS, recording, webhook, contacts),
 EmergencyScreen with 4 call tiles (112/15/17/18 + trusted contact), emergency SMS trigger,
@@ -156,11 +179,11 @@ Crypto invariants (new):
 - `ByteArray.wipe()` zeroes buffer in place
 - DB filename namespaced (`sos_tech.db`)
 
-Known limitations in v0.1:
-- No app lock implemented yet (v0.2)
-- All 7 extended features are stubs (contracts + UI screens ready, no implementation)
-- Settings DataStore not yet AEAD-wrapped (v0.2)
-- Panic-mode decoy KeyStore alias declared but not wired (v0.2)
+Known limitations in v0.1 (some addressed in v0.2, others deferred to v0.3+):
+- No app lock implemented yet → still pending in v0.2 (`AppLockManager` port, panic mode wiring)
+- 7 extended features stubs → emergency SMS path implemented in v0.2; voice / cascade / siren / live-GPS / recording / webhook still NotImplemented
+- Settings DataStore not yet AEAD-wrapped → still pending (target v0.3)
+- Panic-mode decoy KeyStore alias declared but not wired → `PanicGuard` interface introduced in v0.2 with a `DefaultPanicGuard` stub; wiring to a real PanicService deferred to v0.3
 
 ---
 

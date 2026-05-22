@@ -1,0 +1,10 @@
+v0.2.0 — Premier chemin d'urgence utilisable.
+
+- Contacts d'urgence CRUD (Room + SQLCipher).
+- Orchestration urgence : garde panique → cooldown wall+mono → contacts → géoloc optionnelle → message localisé → envoi par destinataire.
+- Envoi SMS multi-segment (logs redactés).
+- Résolveur de position (sans Google Play Services).
+- Paramètres : choix du modèle de SMS + activer la position GPS.
+- Splash d'accueil au premier lancement (5 s, passable).
+- Icône SOS Tech dédiée.
+- Corrections d'audit (cooldown symétrique, enums @Serializable, accessibilité).

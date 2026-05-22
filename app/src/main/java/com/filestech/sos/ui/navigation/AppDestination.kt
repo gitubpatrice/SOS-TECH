@@ -3,6 +3,7 @@ package com.filestech.sos.ui.navigation
 sealed interface AppDestination {
     val route: String
 
+    data object Splash : AppDestination { override val route = "splash" }
     data object Home : AppDestination { override val route = "home" }
     data object Emergency : AppDestination { override val route = "emergency" }
     data object Voice : AppDestination { override val route = "voice" }

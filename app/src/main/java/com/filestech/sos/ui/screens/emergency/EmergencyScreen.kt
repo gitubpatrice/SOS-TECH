@@ -26,11 +26,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,8 +65,33 @@ fun EmergencyScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHost = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            val message = when (event) {
+                is EmergencyEvent.TriggerSuccess -> context.getString(
+                    if (event.hadLocation) R.string.emergency_trigger_success_with_location
+                    else R.string.emergency_trigger_success_no_location,
+                    event.sent,
+                )
+                is EmergencyEvent.TriggerPartial -> context.getString(
+                    R.string.emergency_trigger_partial,
+                    event.sent,
+                    event.failed,
+                )
+                EmergencyEvent.TriggerAllFailed -> context.getString(R.string.emergency_trigger_all_failed)
+                EmergencyEvent.TriggerNoContacts -> context.getString(R.string.emergency_trigger_no_contacts)
+                is EmergencyEvent.TriggerCooldown -> context.getString(R.string.emergency_trigger_cooldown)
+                EmergencyEvent.TriggerEmptyBody -> context.getString(R.string.emergency_trigger_empty_body)
+                EmergencyEvent.TriggerPanicSuppressed -> null // silent by design
+            }
+            if (message != null) snackbarHost.showSnackbar(message)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.emergency_screen_title), fontWeight = FontWeight.SemiBold) },

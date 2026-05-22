@@ -23,11 +23,3 @@ interface SirenController {
     /** Returns true if the siren is currently active. */
     fun isActive(): Boolean
 }
-
-/** Stub no-op implementation used until v0.2 ships the real one. */
-class SirenControllerStub : SirenController {
-    private var active = false
-    override suspend fun start() { active = true }
-    override suspend fun stop() { active = false }
-    override fun isActive(): Boolean = active
-}

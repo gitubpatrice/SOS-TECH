@@ -2,6 +2,12 @@
 <resources>
     <string name="app_name">SOS Tech</string>
 
+    <!-- Welcome splash (first launch only) -->
+    <string name="splash_tagline">The personal safety app that respects your privacy — no cloud, no tracking.</string>
+    <string name="splash_logo_content_description">SOS Tech logo</string>
+    <string name="splash_skip_hint">Tap anywhere to continue</string>
+    <string name="splash_skip_label">Skip splash</string>
+
     <!-- Actions -->
     <string name="action_back">Back</string>
     <string name="action_settings">Settings</string>
@@ -116,4 +122,63 @@
     <!-- Errors -->
     <string name="error_generic">An error occurred. Please try again.</string>
     <string name="error_not_implemented">This feature is not yet implemented (v0.2+)</string>
+
+    <!-- === v0.2 — Contacts CRUD + Trigger orchestration === -->
+
+    <!-- Contacts list -->
+    <string name="contacts_empty_title">No emergency contacts</string>
+    <string name="contacts_empty_body">Add at least one trusted contact so the EMERGENCY button can send an SOS.</string>
+    <string name="contacts_add_button">Add a contact</string>
+
+    <!-- Contact dialog -->
+    <string name="contact_dialog_new_title">New emergency contact</string>
+    <string name="contact_dialog_edit_title">Edit emergency contact</string>
+    <string name="contact_field_name">Display name</string>
+    <string name="contact_field_phone">Phone number</string>
+    <string name="contact_field_priority">Cascade priority (1 = called first; 0 = SMS only)</string>
+    <string name="contact_dialog_save">Save</string>
+
+    <!-- Validation errors -->
+    <string name="contact_error_name_blank">Name cannot be empty</string>
+    <string name="contact_error_phone_invalid">Phone number is invalid</string>
+    <string name="contact_error_priority_negative">Priority cannot be negative</string>
+
+    <!-- Snackbars -->
+    <string name="contact_snack_added">Contact added</string>
+    <string name="contact_snack_updated">Contact updated</string>
+    <string name="contact_snack_deleted">Contact removed</string>
+
+    <!-- Icon button accessibility labels -->
+    <string name="contact_action_edit">Edit contact</string>
+    <string name="contact_action_delete">Remove contact</string>
+
+    <!-- Delete confirm -->
+    <string name="contact_delete_title">Remove this contact?</string>
+    <string name="contact_delete_body">%1$s will no longer receive emergency SMS or appear in the call cascade.</string>
+    <string name="contact_delete_confirm">Remove</string>
+
+    <!-- Trigger result snackbars -->
+    <string name="emergency_trigger_success_with_location">SOS sent to %1$d contact(s) with GPS location.</string>
+    <string name="emergency_trigger_success_no_location">SOS sent to %1$d contact(s) — position not available.</string>
+    <string name="emergency_trigger_partial">SOS sent to %1$d contact(s); %2$d failed.</string>
+    <string name="emergency_trigger_all_failed">All SMS dispatches failed. Check your network or SMS permission.</string>
+    <string name="emergency_trigger_no_contacts">No emergency contact configured.</string>
+    <string name="emergency_trigger_cooldown">Anti-spam cooldown active — please wait before triggering again.</string>
+    <string name="emergency_trigger_empty_body">Internal error: rendered message is empty.</string>
+    <string name="emergency_trigger_permission_sms_required">SOS Tech needs the SMS permission to send your emergency message.</string>
+
+    <!-- Settings — template picker + GPS opt-in -->
+    <string name="settings_emergency_template_title">SMS template</string>
+    <string name="settings_emergency_template_desc">Wording of the emergency SMS sent to your trusted contacts.</string>
+    <string name="settings_emergency_template_need_help">EMERGENCY — I need help</string>
+    <string name="settings_emergency_template_danger">DANGER — critical situation</string>
+    <string name="settings_emergency_template_discreet">Discreet — please call me</string>
+    <string name="settings_emergency_include_location_title">Include GPS location in SMS</string>
+    <string name="settings_emergency_include_location_desc">Adds a Google Maps URL to your emergency message. Requires location permission.</string>
+
+    <!-- Template body strings (GSM-7 compatible — single SMS segment) -->
+    <string name="emergency_template_location_fallback">(location not available)</string>
+    <string name="emergency_template_need_help_body">EMERGENCY - I need help. My location: %1$s</string>
+    <string name="emergency_template_danger_body">DANGER - critical situation, contact me or come. Location: %1$s</string>
+    <string name="emergency_template_discreet_body">Can you call me? I need help. Location: %1$s</string>
 </resources>

@@ -1,0 +1,10 @@
+v0.2.0 — First usable emergency path.
+
+- Emergency contacts CRUD (Room + SQLCipher).
+- TriggerEmergencyUseCase: panic guard → cooldown wall+mono → contacts → optional GPS fix → render localized template → dispatch per recipient.
+- SmsDispatcher (multi-part, redacted logs).
+- LocationResolver (no Google Play Services).
+- Settings: SMS template picker + GPS include toggle.
+- First-launch welcome splash (5 s, skippable).
+- Dedicated SOS Tech icon.
+- Audit fixes (cooldown symmetry, enums @Serializable, accessibility labels).

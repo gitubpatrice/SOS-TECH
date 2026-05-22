@@ -5,6 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.filestech.sos.ui.navigation.AppDestination
+import com.filestech.sos.ui.screens.cascade.CascadeScreen
 import com.filestech.sos.ui.screens.contacts.ContactsScreen
 import com.filestech.sos.ui.screens.emergency.EmergencyScreen
 import com.filestech.sos.ui.screens.home.HomeScreen
@@ -12,9 +13,9 @@ import com.filestech.sos.ui.screens.livegps.LiveGpsScreen
 import com.filestech.sos.ui.screens.recording.RecordingScreen
 import com.filestech.sos.ui.screens.settings.SettingsScreen
 import com.filestech.sos.ui.screens.siren.SirenScreen
+import com.filestech.sos.ui.screens.splash.SplashScreen
 import com.filestech.sos.ui.screens.voice.VoiceScreen
 import com.filestech.sos.ui.screens.webhook.WebhookScreen
-import com.filestech.sos.ui.screens.cascade.CascadeScreen
 
 @Composable
 fun AppRoot() {
@@ -22,8 +23,19 @@ fun AppRoot() {
 
     NavHost(
         navController = navController,
-        startDestination = AppDestination.Home.route,
+        startDestination = AppDestination.Splash.route,
     ) {
+        composable(AppDestination.Splash.route) {
+            SplashScreen(
+                onFinished = {
+                    navController.navigate(AppDestination.Home.route) {
+                        // Splash must never be reachable again via Back — pop it out of the stack.
+                        popUpTo(AppDestination.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+            )
+        }
         composable(AppDestination.Home.route) {
             HomeScreen(
                 onNavigateToEmergency = { navController.navigate(AppDestination.Emergency.route) },

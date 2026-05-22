@@ -87,6 +87,3 @@ private val DarkPalette = darkColorScheme(
 internal fun lightScheme(): ColorScheme = LightPalette
 internal fun darkScheme(amoled: Boolean): ColorScheme =
     if (amoled) DarkPalette.copy(background = Color.Black, surface = Color.Black) else DarkPalette
-
-private fun ColorScheme.withBrandSnackbar(): ColorScheme =
-    copy(inverseSurface = SnackbarBg, inverseOnSurface = SnackbarOn)
