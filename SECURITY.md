@@ -1,6 +1,6 @@
 # SOS Tech — Security model
 
-Current release : **v0.2.0** (2026-05-22)
+Current release : **v0.3.0** (2026-05-22)
 
 This document describes the threat model SOS Tech protects against, the cryptographic
 primitives it uses, the architectural choices that make those primitives meaningful,
@@ -47,9 +47,9 @@ stays on the device.
 | Room database at rest | SQLCipher v4 (`SupportOpenHelperFactory`) | 32-byte random passphrase, wrapped AES-256-GCM by Keystore alias `sostech_db_master`; wrapped blob persisted at `<files>/db/master.key` (`[version:1][iv:12][ct+tag:N]`); raw key wiped from JVM memory immediately after Room consumes it | **v0.1 — implemented** (`DatabaseFactory` + `DatabaseKeyManager`) |
 | AEAD primitive | AES-256-GCM, 12-byte IV, 128-bit tag, envelope versioned (`AeadCipher`) | Keystore-bound `SecretKey` (hardware-backed when available) OR caller-supplied 32-byte raw key | **v0.1 — implemented** |
 | Recording vault | AES-256-GCM | Keystore alias `sostech_recording_kek` | Structural anchor v0.1 — full impl in v0.2 (MediaRecorder + per-recording payload encryption) |
-| App-lock PIN | PBKDF2-HMAC-SHA512 | User secret + 16-byte random salt, ≥ 210k iterations | TODO v0.2 (same pattern as SMS Tech `AppLockManager`) |
-| Settings DataStore | Plain JSON (no AEAD) | — | TODO v0.2: wrap sensitive prefs under Keystore alias `sostech_settings_aead` |
-| Panic-mode decoy | AES-256-GCM | Keystore alias `sostech_panic_decoy` (separate from `sostech_db_master`) | TODO v0.2 (port from SMS Tech `PanicService`) |
+| App-lock PIN | PBKDF2-HMAC-SHA512 | User secret + 16-byte random salt, ≥ 210 000 iterations | **v0.3 — implemented** (`PasswordKdf` + `SecurityStore` + `AppLockManager`) |
+| Settings DataStore | Plain JSON (no AEAD) | — | TODO v0.4: wrap sensitive prefs under Keystore alias `sostech_settings_aead` |
+| Panic-mode decoy | `LockState.PanicDecoy` gate via `AppLockPanicGuard` | Same PBKDF2 path as PIN, distinct salt/hash in `SecurityStore` | **v0.3 — implemented** (`PanicGuard` wired to real `AppLockManager.state`) |
 
 All Keystore keys are non-exportable, hardware-backed when available, and use `setRandomizedEncryptionRequired(false)` because IVs are generated cryptographically at the call site (96-bit SecureRandom — never reused).
 
@@ -121,7 +121,45 @@ SOS Tech cannot and does not verify that consent was obtained.
 
 ## Audit history
 
-### v0.2.0 (this release) — First usable emergency path + multi-axis audit
+### v0.3.0 (this release) — Security foundations (PIN + biometric + panic-decoy)
+
+- **AppLockManager** port from SMS Tech v1.x with full `LockState` sealed surface
+  (`Disabled` / `Locked` / `LockedOut` / `Unlocked` / `PanicDecoy`).
+- **PBKDF2-HMAC-SHA512** PIN hash with ≥ 210 000 iterations (OWASP Mobile 2024 baseline),
+  calibrated at first use to ~300 ms on host device.
+- **Distinct panic code** (decoy mode) — when entered, `LockState.PanicDecoy` is set silently
+  and the UI is reachable but trusted contacts list, recordings, and emergency SMS history are
+  all hidden. `PanicGuard` is now backed by this real state (was a stub returning `false` in v0.2).
+- **BiometricPrompt** with single-use random 32-byte challenge — biometric success is only
+  accepted in `LockState.Locked` (cannot bypass `LockedOut` cool-down or unseal a `PanicDecoy`
+  session). AtomicReference ensures atomic one-shot consume.
+- **Exponential backoff**: 5 s → 5 min over 6 steps after 5 consecutive PIN failures.
+  Lockout horizon clamped to 24 h forward (anti tainted-DataStore-restore, audit P1-1).
+- **Both PIN and panic evaluated on every attempt** before incrementing fail counter
+  (audit P1-3: prevents panic-code brute-force bypassing the lockout threshold).
+- **AutoLockObserver** via `ProcessLifecycleOwner` — app re-locks on background.
+- **BootReceiver** drift recovery for `monotonicLastTriggeredAt` (anti cooldown bypass after
+  reboot — monotonic clock resets on reboot, perpetual cooldown without this fix).
+- **PanicService `nukeEverything()`** (Settings → "Effacer toutes les données") — close DB →
+  drop wrapped key file → delete keystore aliases → `deleteDatabase` → clear all security store
+  entries (credentials + fail counters) → wipe files dirs → reset settings.
+- **EmergencyShortcutNotifier** persistent lock-screen notification: IMPORTANCE_LOW,
+  VISIBILITY_PUBLIC, ongoing, 3 actions (URGENCE SMS / 112 / 17). Cancelled in PanicDecoy to
+  avoid leaking emergency-mode presence under coercion.
+- **UrgenceHoldButton** 3 s hold-to-trigger anti-pocket-dial (port from SMS Tech v1.14.0),
+  replaces the simple tap button in `EmergencyScreen`.
+- **Settings UI**: PIN setup / change / clear, biometric toggle (requires PIN), panic code
+  setup / clear.
+- **`SecurityStore`** ported from SMS Tech with `vault.*` keys removed (SOS Tech has no vault
+  screen), DataStore name `sos_tech_security`.
+
+All HIGH/MEDIUM audit findings from v0.2 carried forward addressed.
+
+Tests: `AuditV030Test` 25 new guard-regression tests. Total **59 / 59 green**
+(`AuditV001Test` 21 + `AuditV020Test` 13 + `AuditV030Test` 25).
+`lintVitalRelease` clean. `assembleRelease` successful (R8 + signed APKs).
+
+### v0.2.0 — First usable emergency path + multi-axis audit
 
 Foundations livered:
 - **Emergency contacts** CRUD persisted in SQLCipher Room DB (alias `sostech_db_master`). Validation chain: bidi/zero-width strip on name, digit enforcement on phone, non-negative priority, id > 0 on update.

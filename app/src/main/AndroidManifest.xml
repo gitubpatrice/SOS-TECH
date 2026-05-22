@@ -105,6 +105,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Emergency shortcut receiver — handles persistent notification action intents -->
+        <receiver
+            android:name=".system.receiver.EmergencyShortcutReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.filestech.sos.ACTION_TRIGGER_EMERGENCY" />
+            </intent-filter>
+        </receiver>
+
         <!-- WorkManager HiltWorkerFactory initialization -->
         <provider
             android:name="androidx.startup.InitializationProvider"

@@ -181,4 +181,54 @@
     <string name="emergency_template_need_help_body">URGENCE - j\'ai besoin d\'aide. Ma position : %1$s</string>
     <string name="emergency_template_danger_body">DANGER - situation critique, contactez-moi ou venez. Position : %1$s</string>
     <string name="emergency_template_discreet_body">Pouvez-vous m\'appeler ? J\'ai besoin d\'aide. Position : %1$s</string>
+
+    <!-- === v0.3 — Fondations de sécurité (PIN + biométrie + code panique + auto-lock) === -->
+
+    <!-- Écran de verrouillage -->
+    <string name="lock_screen_title">Déverrouillez SOS Tech</string>
+    <string name="lock_pin_label">Code PIN</string>
+    <string name="lock_unlock_button">Déverrouiller</string>
+    <string name="lock_biometric_button">Utiliser la biométrie</string>
+    <string name="lock_pin_invalid">PIN incorrect</string>
+    <string name="lock_locked_out">Trop de tentatives. Attendez %1$s</string>
+    <string name="lock_biometric_error">Échec de la biométrie. Utilisez votre PIN.</string>
+
+    <!-- Paramètres — Section sécurité -->
+    <string name="settings_section_security">Sécurité</string>
+    <string name="settings_pin_setup_title">Code PIN</string>
+    <string name="settings_pin_setup_desc">Définissez un PIN pour verrouiller l\'application en arrière-plan ou après un redémarrage.</string>
+    <string name="settings_pin_change">Modifier le PIN</string>
+    <string name="settings_pin_change_title">Modifier le code PIN</string>
+    <string name="settings_pin_confirm_label">Confirmer le PIN</string>
+    <string name="settings_pin_clear">Désactiver le verrouillage PIN</string>
+    <string name="settings_pin_clear_title">Désactiver le verrouillage PIN ?</string>
+    <string name="settings_pin_clear_body">L\'application ne sera plus protégée par un PIN. La biométrie sera également désactivée.</string>
+    <string name="settings_pin_mismatch">Les PIN ne correspondent pas</string>
+    <string name="settings_pin_too_short">Le PIN doit contenir au moins 4 chiffres</string>
+    <string name="settings_pin_set_success">PIN configuré avec succès</string>
+    <string name="settings_pin_cleared">Verrouillage PIN désactivé</string>
+
+    <!-- Paramètres — Biométrie -->
+    <string name="settings_biometric_title">Déverrouillage biométrique</string>
+    <string name="settings_biometric_desc">Utilisez votre empreinte pour déverrouiller (nécessite un PIN au préalable)</string>
+    <string name="settings_biometric_error_no_pin">Veuillez d\'abord définir un PIN avant d\'activer la biométrie.</string>
+
+    <!-- Paramètres — Code panique (mode décoy) -->
+    <string name="settings_panic_title">Code panique (mode décoy)</string>
+    <string name="settings_panic_desc">Un code distinct qui masque vos contacts et enregistrements sous la contrainte.</string>
+    <string name="settings_panic_change">Modifier le code panique</string>
+    <string name="settings_panic_setup_title">Définir le code panique</string>
+    <string name="settings_panic_setup_warning">IMPORTANT : Utilisez un code différent de votre PIN principal. Lorsqu\'il est saisi, l\'application s\'ouvre mais toutes les données sensibles sont masquées.</string>
+    <string name="settings_panic_confirm_label">Code panique</string>
+    <string name="settings_panic_clear_title">Supprimer le code panique ?</string>
+    <string name="settings_panic_same_as_pin">Le code panique doit être différent de votre PIN principal.</string>
+    <string name="settings_panic_set_success">Code panique configuré</string>
+    <string name="settings_panic_cleared">Code panique supprimé</string>
+
+    <!-- Notification raccourci d\'urgence -->
+    <string name="notif_emergency_shortcut_title">SOS Tech — Urgence prête</string>
+    <string name="notif_emergency_shortcut_text">Touchez une action pour déclencher l\'assistance d\'urgence</string>
+    <string name="notif_emergency_shortcut_action_emergency">SMS URGENCE</string>
+    <string name="notif_emergency_shortcut_action_112">Appeler 112</string>
+    <string name="notif_emergency_shortcut_action_17">Appeler 17 (Police)</string>
 </resources>

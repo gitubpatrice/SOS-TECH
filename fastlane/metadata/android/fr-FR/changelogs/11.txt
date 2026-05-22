@@ -1,0 +1,10 @@
+v0.3.0 — Fondations de sécurité.
+
+- Verrouillage par PIN (PBKDF2-HMAC-SHA512, ≥ 210 000 itérations).
+- Authentification biométrique (empreinte) en option.
+- Mode décoy (code panique distinct) — l'agresseur voit l'app vide.
+- Backoff exponentiel après 5 tentatives ratées (5 s → 5 min).
+- Auto-lock au passage en arrière-plan.
+- Notification d'urgence persistante sur l'écran verrouillé.
+- Bouton URGENCE SMS avec maintien 3 secondes (anti-déclenchement accidentel).
+- « Effacer toutes mes données » dans les paramètres (PanicService).

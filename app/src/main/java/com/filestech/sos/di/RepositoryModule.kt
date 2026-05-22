@@ -3,7 +3,7 @@ package com.filestech.sos.di
 import com.filestech.sos.data.repository.EmergencyContactRepositoryImpl
 import com.filestech.sos.domain.cascade.CascadeDialer
 import com.filestech.sos.domain.contact.EmergencyContactRepository
-import com.filestech.sos.domain.emergency.DefaultPanicGuard
+import com.filestech.sos.domain.emergency.AppLockPanicGuard
 import com.filestech.sos.domain.emergency.PanicGuard
 import com.filestech.sos.domain.recording.RecordingController
 import com.filestech.sos.domain.siren.SirenController
@@ -37,7 +37,7 @@ abstract class RepositoryModule {
     @Binds @Singleton
     abstract fun bindEmergencyContactRepository(impl: EmergencyContactRepositoryImpl): EmergencyContactRepository
 
-    // v0.2 stub: returns isPanicActive() == false. Wire to real PanicService in v0.3.
+    // v0.3: real implementation backed by AppLockManager.state (was DefaultPanicGuard stub).
     @Binds @Singleton
-    abstract fun bindPanicGuard(impl: DefaultPanicGuard): PanicGuard
+    abstract fun bindPanicGuard(impl: AppLockPanicGuard): PanicGuard
 }

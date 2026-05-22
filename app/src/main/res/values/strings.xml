@@ -181,4 +181,54 @@
     <string name="emergency_template_need_help_body">EMERGENCY - I need help. My location: %1$s</string>
     <string name="emergency_template_danger_body">DANGER - critical situation, contact me or come. Location: %1$s</string>
     <string name="emergency_template_discreet_body">Can you call me? I need help. Location: %1$s</string>
+
+    <!-- === v0.3 — Security foundations (PIN + biometric + panic-decoy + auto-lock) === -->
+
+    <!-- Lock screen -->
+    <string name="lock_screen_title">Unlock SOS Tech</string>
+    <string name="lock_pin_label">PIN code</string>
+    <string name="lock_unlock_button">Unlock</string>
+    <string name="lock_biometric_button">Use biometric</string>
+    <string name="lock_pin_invalid">Invalid PIN</string>
+    <string name="lock_locked_out">Too many attempts. Wait %1$s</string>
+    <string name="lock_biometric_error">Biometric failed. Use your PIN.</string>
+
+    <!-- Settings — Security section -->
+    <string name="settings_section_security">Security</string>
+    <string name="settings_pin_setup_title">PIN code</string>
+    <string name="settings_pin_setup_desc">Set a PIN to lock the app on background or after a reboot.</string>
+    <string name="settings_pin_change">Change PIN</string>
+    <string name="settings_pin_change_title">Change PIN code</string>
+    <string name="settings_pin_confirm_label">Confirm PIN</string>
+    <string name="settings_pin_clear">Disable PIN lock</string>
+    <string name="settings_pin_clear_title">Disable PIN lock?</string>
+    <string name="settings_pin_clear_body">The app will no longer be protected by a PIN. This also disables biometric unlock.</string>
+    <string name="settings_pin_mismatch">PINs do not match</string>
+    <string name="settings_pin_too_short">PIN must be at least 4 digits</string>
+    <string name="settings_pin_set_success">PIN configured successfully</string>
+    <string name="settings_pin_cleared">PIN lock disabled</string>
+
+    <!-- Settings — Biometric -->
+    <string name="settings_biometric_title">Biometric unlock</string>
+    <string name="settings_biometric_desc">Use fingerprint to unlock (requires PIN to be set first)</string>
+    <string name="settings_biometric_error_no_pin">Please set a PIN before enabling biometric unlock.</string>
+
+    <!-- Settings — Panic code (decoy) -->
+    <string name="settings_panic_title">Panic code (decoy mode)</string>
+    <string name="settings_panic_desc">A distinct code that hides your contacts and recordings under duress.</string>
+    <string name="settings_panic_change">Change panic code</string>
+    <string name="settings_panic_setup_title">Set panic code</string>
+    <string name="settings_panic_setup_warning">IMPORTANT: Use a different code from your main PIN. When entered, the app opens but all sensitive data is hidden.</string>
+    <string name="settings_panic_confirm_label">Panic code</string>
+    <string name="settings_panic_clear_title">Remove panic code?</string>
+    <string name="settings_panic_same_as_pin">Panic code must be different from your main PIN.</string>
+    <string name="settings_panic_set_success">Panic code configured</string>
+    <string name="settings_panic_cleared">Panic code removed</string>
+
+    <!-- Emergency shortcut notification -->
+    <string name="notif_emergency_shortcut_title">SOS Tech — Emergency ready</string>
+    <string name="notif_emergency_shortcut_text">Tap an action to trigger emergency assistance</string>
+    <string name="notif_emergency_shortcut_action_emergency">EMERGENCY SMS</string>
+    <string name="notif_emergency_shortcut_action_112">Call 112</string>
+    <string name="notif_emergency_shortcut_action_17">Call 17 (Police)</string>
 </resources>

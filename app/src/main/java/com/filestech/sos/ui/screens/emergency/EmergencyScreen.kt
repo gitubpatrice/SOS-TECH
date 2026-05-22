@@ -1,6 +1,8 @@
 package com.filestech.sos.ui.screens.emergency
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -34,12 +37,19 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,6 +60,8 @@ import com.filestech.sos.domain.emergency.EmergencyCallBehavior
 import com.filestech.sos.security.EmergencyCallHelper
 import com.filestech.sos.ui.theme.BrandDanger
 import com.filestech.sos.ui.theme.BrandEmergency
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // Emergency number colors (WCAG AA vs White verified)
 private val Color112 = Color(0xFFC62828)      // Red BrandDanger
@@ -189,26 +201,13 @@ fun EmergencyScreen(
             // Section 2: SMS URGENCE hold-3s
             item { SectionTitle(stringResource(R.string.emergency_section_sms_title)) }
             item {
-                // TODO v0.2: UrgenceHoldButton with 3s progress indicator + EmergencyViewModel.trigger()
-                Button(
-                    onClick = { viewModel.triggerEmergencySms() },
+                UrgenceHoldButton(
+                    enabled = state.canTrigger,
+                    onTriggered = { viewModel.triggerEmergencySms() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandEmergency,
-                        contentColor = Color.White,
-                    ),
-                    enabled = state.canTrigger,
-                ) {
-                    Icon(Icons.Default.Sos, contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text(
-                        text = stringResource(R.string.emergency_sms_trigger_button),
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                }
+                )
             }
 
             // Active features recap
@@ -243,6 +242,85 @@ fun EmergencyScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Hold-3s anti-pocket-dial button. Port from SMS Tech v1.14.0 EmergencyCallButton.
+ * Visual feedback via LinearProgressIndicator at bottom of button.
+ * Haptic feedback at completion.
+ */
+@Composable
+private fun UrgenceHoldButton(
+    enabled: Boolean,
+    onTriggered: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var isHolding by remember { mutableStateOf(false) }
+    var progress by remember { mutableFloatStateOf(0f) }
+    val haptic = LocalHapticFeedback.current
+
+    LaunchedEffect(isHolding) {
+        if (!isHolding) {
+            progress = 0f
+            return@LaunchedEffect
+        }
+        val startMs = System.currentTimeMillis()
+        while (isHolding && progress < 1f) {
+            val elapsed = System.currentTimeMillis() - startMs
+            progress = (elapsed / 3000f).coerceAtMost(1f)
+            delay(16) // ~60fps
+            if (progress >= 1f && isHolding) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onTriggered()
+                isHolding = false
+                break
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .pointerInput(enabled) {
+                if (!enabled) return@pointerInput
+                detectTapGestures(
+                    onPress = {
+                        isHolding = true
+                        try {
+                            awaitRelease()
+                        } finally {
+                            isHolding = false
+                        }
+                    },
+                )
+            },
+    ) {
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxSize(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = BrandEmergency,
+                contentColor = Color.White,
+            ),
+            enabled = enabled,
+        ) {
+            Icon(Icons.Default.Sos, contentDescription = null)
+            Spacer(Modifier.size(8.dp))
+            Text(
+                text = stringResource(R.string.emergency_sms_trigger_button),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleSmall,
+            )
+        }
+        if (isHolding) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                color = Color.White,
+            )
         }
     }
 }

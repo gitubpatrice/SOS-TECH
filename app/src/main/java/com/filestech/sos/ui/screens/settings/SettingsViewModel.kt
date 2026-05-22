@@ -3,17 +3,32 @@ package com.filestech.sos.ui.screens.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.filestech.sos.data.local.datastore.AppSettings
+import com.filestech.sos.data.local.datastore.LockMode
 import com.filestech.sos.data.local.datastore.SettingsRepository
 import com.filestech.sos.di.IoDispatcher
 import com.filestech.sos.domain.emergency.EmergencyTemplate
+import com.filestech.sos.security.AppLockManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed interface SettingsEvent {
+    data object PinSetSuccess : SettingsEvent
+    data object PinClearSuccess : SettingsEvent
+    data object BiometricEnableSuccess : SettingsEvent
+    data object BiometricEnableFailed : SettingsEvent
+    data object PanicSetSuccess : SettingsEvent
+    data object PanicClearSuccess : SettingsEvent
+    data object NukeSuccess : SettingsEvent
+    data class Error(val message: String) : SettingsEvent
+}
 
 data class SettingsUiState(
     val shortcutNotifEnabled: Boolean = false,
@@ -26,11 +41,15 @@ data class SettingsUiState(
     val flagSecure: Boolean = true,
     val emergencyTemplate: EmergencyTemplate = EmergencyTemplate.NEED_HELP,
     val emergencyIncludeLocation: Boolean = false,
+    val lockMode: LockMode = LockMode.OFF,
+    val isPinConfigured: Boolean = false,
+    val isPanicConfigured: Boolean = false,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
+    private val appLockManager: AppLockManager,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : ViewModel() {
 
@@ -47,6 +66,11 @@ class SettingsViewModel @Inject constructor(
                 flagSecure = s.security.flagSecure,
                 emergencyTemplate = s.emergency.template,
                 emergencyIncludeLocation = s.emergency.includeLocation,
+                lockMode = s.security.lockMode,
+                // isPinConfigured: lockMode != OFF means a PIN was set at some point.
+                // We derive this from lockMode rather than hitting SecurityStore on each emission.
+                isPinConfigured = s.security.lockMode != LockMode.OFF,
+                isPanicConfigured = false, // no easy flow source; checked on demand
             )
         }
         .stateIn(
@@ -54,6 +78,9 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000L),
             initialValue = SettingsUiState(),
         )
+
+    private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
 
     fun toggleEmergencyShortcut(enabled: Boolean) = update { s ->
         s.copy(emergency = s.emergency.copy(shortcutNotifEnabled = enabled))
@@ -93,6 +120,55 @@ class SettingsViewModel @Inject constructor(
 
     fun toggleIncludeLocation(enabled: Boolean) = update { s ->
         s.copy(emergency = s.emergency.copy(includeLocation = enabled))
+    }
+
+    fun setPin(pin: CharArray) {
+        viewModelScope.launch(io) {
+            try {
+                appLockManager.setPin(pin)
+                _events.send(SettingsEvent.PinSetSuccess)
+            } catch (e: Exception) {
+                _events.send(SettingsEvent.Error(e.message ?: "PIN error"))
+            }
+        }
+    }
+
+    fun clearPin() {
+        viewModelScope.launch(io) {
+            appLockManager.clearPin()
+            _events.send(SettingsEvent.PinClearSuccess)
+        }
+    }
+
+    fun enableBiometric() {
+        viewModelScope.launch(io) {
+            val ok = appLockManager.enableBiometric()
+            _events.send(if (ok) SettingsEvent.BiometricEnableSuccess else SettingsEvent.BiometricEnableFailed)
+        }
+    }
+
+    fun disableBiometric() {
+        viewModelScope.launch(io) {
+            appLockManager.disableBiometric()
+        }
+    }
+
+    fun setPanicCode(pin: CharArray) {
+        viewModelScope.launch(io) {
+            try {
+                appLockManager.setPanicCode(pin)
+                _events.send(SettingsEvent.PanicSetSuccess)
+            } catch (e: Exception) {
+                _events.send(SettingsEvent.Error(e.message ?: "Panic code error"))
+            }
+        }
+    }
+
+    fun clearPanicCode() {
+        viewModelScope.launch(io) {
+            appLockManager.clearPanicCode()
+            _events.send(SettingsEvent.PanicClearSuccess)
+        }
     }
 
     private fun update(transform: (AppSettings) -> AppSettings) {

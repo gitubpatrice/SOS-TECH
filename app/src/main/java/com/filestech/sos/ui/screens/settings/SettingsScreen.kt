@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,13 +20,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,10 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.filestech.sos.R
+import com.filestech.sos.data.local.datastore.LockMode
 import com.filestech.sos.domain.emergency.EmergencyTemplate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,8 +56,36 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHost = remember { SnackbarHostState() }
+
+    var showPinSetupDialog by remember { mutableStateOf(false) }
+    var showPinClearConfirm by remember { mutableStateOf(false) }
+    var showPanicSetupDialog by remember { mutableStateOf(false) }
+    var showPanicClearConfirm by remember { mutableStateOf(false) }
+
+    val msgPinSet = stringResource(R.string.settings_pin_set_success)
+    val msgPinCleared = stringResource(R.string.settings_pin_cleared)
+    val msgPanicSet = stringResource(R.string.settings_panic_set_success)
+    val msgPanicCleared = stringResource(R.string.settings_panic_cleared)
+    val msgBioFailed = stringResource(R.string.settings_biometric_error_no_pin)
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                SettingsEvent.PinSetSuccess -> snackbarHost.showSnackbar(msgPinSet)
+                SettingsEvent.PinClearSuccess -> snackbarHost.showSnackbar(msgPinCleared)
+                SettingsEvent.BiometricEnableSuccess -> { /* no snackbar needed */ }
+                SettingsEvent.BiometricEnableFailed -> snackbarHost.showSnackbar(msgBioFailed)
+                SettingsEvent.PanicSetSuccess -> snackbarHost.showSnackbar(msgPanicSet)
+                SettingsEvent.PanicClearSuccess -> snackbarHost.showSnackbar(msgPanicCleared)
+                SettingsEvent.NukeSuccess -> { /* handled elsewhere */ }
+                is SettingsEvent.Error -> snackbarHost.showSnackbar(event.message)
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHost) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
@@ -67,6 +103,54 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // === Section Sécurité ===
+            SettingsSectionHeader(stringResource(R.string.settings_section_security))
+
+            ListItem(
+                modifier = Modifier.clickable { showPinSetupDialog = true },
+                headlineContent = { Text(stringResource(R.string.settings_pin_setup_title)) },
+                supportingContent = {
+                    Text(
+                        if (state.isPinConfigured) stringResource(R.string.settings_pin_change)
+                        else stringResource(R.string.settings_pin_setup_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+            )
+            if (state.isPinConfigured) {
+                SettingsToggleRow(
+                    title = stringResource(R.string.settings_biometric_title),
+                    subtitle = stringResource(R.string.settings_biometric_desc),
+                    checked = state.lockMode == LockMode.BIOMETRIC,
+                    onToggle = { enabled ->
+                        if (enabled) viewModel.enableBiometric() else viewModel.disableBiometric()
+                    },
+                )
+                ListItem(
+                    modifier = Modifier.clickable { showPanicSetupDialog = true },
+                    headlineContent = { Text(stringResource(R.string.settings_panic_title)) },
+                    supportingContent = {
+                        Text(
+                            if (state.isPanicConfigured) stringResource(R.string.settings_panic_change)
+                            else stringResource(R.string.settings_panic_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                )
+            }
+            if (state.isPinConfigured) {
+                ListItem(
+                    modifier = Modifier.clickable { showPinClearConfirm = true },
+                    headlineContent = {
+                        Text(
+                            stringResource(R.string.settings_pin_clear),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    },
+                )
+            }
+
+            HorizontalDivider()
             SettingsSectionHeader(stringResource(R.string.settings_section_emergency))
             SettingsToggleRow(
                 title = stringResource(R.string.settings_emergency_shortcut_title),
@@ -123,7 +207,6 @@ fun SettingsScreen(
 
             HorizontalDivider()
             SettingsSectionHeader(stringResource(R.string.settings_section_recording))
-            // Disclaimer always visible in this section
             Text(
                 text = stringResource(R.string.settings_recording_legal_warning),
                 style = MaterialTheme.typography.bodySmall,
@@ -156,7 +239,223 @@ fun SettingsScreen(
             )
         }
     }
+
+    // Dialogs
+    if (showPinSetupDialog) {
+        PinSetupDialog(
+            isChanging = state.isPinConfigured,
+            onDismiss = { showPinSetupDialog = false },
+            onConfirm = { pin ->
+                viewModel.setPin(pin)
+                showPinSetupDialog = false
+            },
+        )
+    }
+
+    if (showPinClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showPinClearConfirm = false },
+            title = { Text(stringResource(R.string.settings_pin_clear_title)) },
+            text = { Text(stringResource(R.string.settings_pin_clear_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearPin()
+                        showPinClearConfirm = false
+                    }
+                ) {
+                    Text(stringResource(R.string.action_disable), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPinClearConfirm = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+
+    if (showPanicSetupDialog) {
+        PanicSetupDialog(
+            onDismiss = { showPanicSetupDialog = false },
+            onConfirm = { pin ->
+                viewModel.setPanicCode(pin)
+                showPanicSetupDialog = false
+            },
+        )
+    }
+
+    if (showPanicClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showPanicClearConfirm = false },
+            title = { Text(stringResource(R.string.settings_panic_clear_title)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearPanicCode()
+                        showPanicClearConfirm = false
+                    }
+                ) {
+                    Text(stringResource(R.string.action_disable), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPanicClearConfirm = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
 }
+
+// ---- PIN setup dialog ----
+
+@Composable
+private fun PinSetupDialog(
+    isChanging: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (CharArray) -> Unit,
+) {
+    var pin by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    val mismatch = confirm.isNotEmpty() && pin != confirm
+    val tooShort = pin.isNotEmpty() && pin.length < 4
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                if (isChanging) stringResource(R.string.settings_pin_change_title)
+                else stringResource(R.string.settings_pin_setup_title)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.lock_pin_label)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        autoCorrectEnabled = false,
+                    ),
+                    singleLine = true,
+                    isError = tooShort,
+                    supportingText = if (tooShort) {
+                        { Text(stringResource(R.string.settings_pin_too_short)) }
+                    } else null,
+                )
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.settings_pin_confirm_label)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        autoCorrectEnabled = false,
+                    ),
+                    singleLine = true,
+                    isError = mismatch,
+                    supportingText = if (mismatch) {
+                        { Text(stringResource(R.string.settings_pin_mismatch)) }
+                    } else null,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = pin.length >= 4 && pin == confirm,
+                onClick = {
+                    val array = pin.toCharArray()
+                    pin = ""
+                    confirm = ""
+                    onConfirm(array)
+                },
+            ) {
+                Text(stringResource(R.string.action_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
+
+// ---- Panic code setup dialog ----
+
+@Composable
+private fun PanicSetupDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (CharArray) -> Unit,
+) {
+    var pin by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    val mismatch = confirm.isNotEmpty() && pin != confirm
+    val tooShort = pin.isNotEmpty() && pin.length < 4
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_panic_setup_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_panic_setup_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { pin = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.settings_panic_confirm_label)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        autoCorrectEnabled = false,
+                    ),
+                    singleLine = true,
+                    isError = tooShort,
+                    supportingText = if (tooShort) {
+                        { Text(stringResource(R.string.settings_pin_too_short)) }
+                    } else null,
+                )
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.settings_pin_confirm_label)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.NumberPassword,
+                        autoCorrectEnabled = false,
+                    ),
+                    singleLine = true,
+                    isError = mismatch,
+                    supportingText = if (mismatch) {
+                        { Text(stringResource(R.string.settings_pin_mismatch)) }
+                    } else null,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = pin.length >= 4 && pin == confirm,
+                onClick = {
+                    val array = pin.toCharArray()
+                    pin = ""
+                    confirm = ""
+                    onConfirm(array)
+                },
+            ) {
+                Text(stringResource(R.string.action_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
+
+// ---- Shared composables ----
 
 @Composable
 private fun SettingsSectionHeader(title: String) {

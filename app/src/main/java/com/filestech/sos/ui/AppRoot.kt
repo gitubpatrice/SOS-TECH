@@ -1,15 +1,21 @@
 package com.filestech.sos.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.filestech.sos.security.AppLockManager
 import com.filestech.sos.ui.navigation.AppDestination
 import com.filestech.sos.ui.screens.cascade.CascadeScreen
 import com.filestech.sos.ui.screens.contacts.ContactsScreen
 import com.filestech.sos.ui.screens.emergency.EmergencyScreen
 import com.filestech.sos.ui.screens.home.HomeScreen
 import com.filestech.sos.ui.screens.livegps.LiveGpsScreen
+import com.filestech.sos.ui.screens.lock.LockScreen
+import com.filestech.sos.ui.screens.lock.LockViewModel
 import com.filestech.sos.ui.screens.recording.RecordingScreen
 import com.filestech.sos.ui.screens.settings.SettingsScreen
 import com.filestech.sos.ui.screens.siren.SirenScreen
@@ -19,6 +25,22 @@ import com.filestech.sos.ui.screens.webhook.WebhookScreen
 
 @Composable
 fun AppRoot() {
+    val lockViewModel: LockViewModel = hiltViewModel()
+    val lockState by lockViewModel.state.collectAsStateWithLifecycle()
+
+    // Gate: Locked or LockedOut → show LockScreen full-screen, no NavHost visible.
+    // Disabled / Unlocked / PanicDecoy → proceed to NavHost.
+    val showLock = when (lockState) {
+        AppLockManager.LockState.Locked,
+        is AppLockManager.LockState.LockedOut -> true
+        else -> false
+    }
+
+    if (showLock) {
+        LockScreen(viewModel = lockViewModel)
+        return
+    }
+
     val navController = rememberNavController()
 
     NavHost(
@@ -29,7 +51,6 @@ fun AppRoot() {
             SplashScreen(
                 onFinished = {
                     navController.navigate(AppDestination.Home.route) {
-                        // Splash must never be reachable again via Back — pop it out of the stack.
                         popUpTo(AppDestination.Splash.route) { inclusive = true }
                         launchSingleTop = true
                     }
