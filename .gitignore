@@ -23,6 +23,7 @@ build/
 keystore.properties
 *.keystore
 *.jks
+RELEASE_KEYSTORE*.txt
 
 # Kotlin
 .kotlin/
