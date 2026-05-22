@@ -1,5 +1,10 @@
 name: Release build
 
+# Triggered by pushing a tag matching v*.
+# Signs the APKs if a release keystore is configured via secrets; otherwise builds unsigned APKs
+# (acceptable for early v0.x scaffold tags — the real signed release lands when SOS Tech goes to
+# F-Droid / GitHub Releases with a proper keystore).
+
 on:
   push:
     tags:
@@ -10,6 +15,8 @@ jobs:
     name: Build release APKs
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
 
     steps:
       - name: Checkout
@@ -34,13 +41,15 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
 
-      - name: Decode keystore
+      - name: Decode keystore (if configured)
+        if: env.HAS_KEYSTORE == 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           echo "$KEYSTORE_BASE64" | base64 -d > app/release.jks
 
-      - name: Write keystore.properties
+      - name: Write keystore.properties (if configured)
+        if: env.HAS_KEYSTORE == 'true'
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
