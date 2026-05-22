@@ -20,7 +20,7 @@ documentfile = "1.0.1"
 security-crypto = "1.1.0-alpha06"
 
 # Hilt
-hilt = "2.57.2"
+hilt = "2.59.2"
 hilt-work = "1.2.0"
 hilt-navigation-compose = "1.2.0"
 
