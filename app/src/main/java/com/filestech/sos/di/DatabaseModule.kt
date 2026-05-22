@@ -9,8 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import net.sqlcipher.database.SQLiteDatabase
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import javax.inject.Singleton
 
 @Module
@@ -23,12 +22,13 @@ object DatabaseModule {
         // TODO v0.2: derive passphrase from Android Keystore alias "sos_db_master"
         // using PasswordKdf + AES-GCM wrap (same pattern as SMS Tech SecurityStore).
         // v0.1: fixed passphrase placeholder — REPLACE before any production data.
-        val passphraseBytes = SQLiteDatabase.getBytes("sos_db_placeholder_v01".toCharArray())
-        val factory = SupportFactory(passphraseBytes)
+        System.loadLibrary("sqlcipher")
+        val passphraseBytes = "sos_db_placeholder_v01".toByteArray(Charsets.UTF_8)
+        val factory = SupportOpenHelperFactory(passphraseBytes)
 
         return Room.databaseBuilder(context, AppDatabase::class.java, "sos_tech.db")
             .openHelperFactory(factory)
-            .fallbackToDestructiveMigration() // TODO: remove once first migration is defined
+            .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true) // TODO: replace with proper Migration once first schema change occurs
             .build()
     }
 

@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.ContactPhone
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PhoneForwarded
+import androidx.compose.material.icons.automirrored.filled.PhoneForwarded
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sos
 import androidx.compose.material.icons.filled.Webhook
@@ -160,7 +160,7 @@ fun HomeScreen(
             }
             item {
                 FeatureCard(
-                    icon = Icons.Default.PhoneForwarded,
+                    icon = Icons.AutoMirrored.Filled.PhoneForwarded,
                     title = stringResource(R.string.feature_cascade_title),
                     description = stringResource(R.string.feature_cascade_desc),
                     enabled = state.cascadeEnabled,
