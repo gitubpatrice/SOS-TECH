@@ -15,6 +15,8 @@ jobs:
     name: Build release APKs
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write  # required to create the GitHub Release + upload APK assets
     env:
       HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
 
