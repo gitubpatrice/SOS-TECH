@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- === PERMISSIONS === -->
+
+    <!-- Network (webhook HTTP POST, no other cloud usage) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Voice keyword — microphone for ambient recording + Vosk keyword spotter -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Emergency calls (opt-in — HOLD_3S or TAP direct mode) -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+
+    <!-- Cascade dialer — detect call state transitions -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <!-- SMS urgence -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
+    <!-- Contact import (read-only, opt-in setup wizard) -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- Location — single-fix for emergency SMS + live GPS sharing -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Background location — live GPS worker (WorkManager) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Flashlight (siren strobe — flash only, no camera preview) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Biometric (app lock opt-in) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <!-- Foreground services -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Voice keyword: microphone foreground service type -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Live GPS: location foreground service type -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Siren flash: camera foreground service type -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+
+    <!-- Boot: re-post emergency shortcut notification after reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Optional telephony feature (app works on tablets without SIM) -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <!-- Optional camera feature (siren flash) -->
+    <uses-feature
+        android:name="android.hardware.camera.flash"
+        android:required="false" />
+
+    <application
+        android:name=".MainApplication"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SosTech"
+        tools:targetApi="35">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Voice keyword trigger service -->
+        <service
+            android:name=".system.service.VoiceTriggerService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- Cascade dialer service -->
+        <service
+            android:name=".system.service.CascadeDialerService"
+            android:exported="false"
+            android:foregroundServiceType="phoneCall" />
+
+        <!-- Boot receiver — re-post emergency shortcut after reboot -->
+        <receiver
+            android:name=".system.receiver.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- WorkManager HiltWorkerFactory initialization -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <!-- Disable auto-init of WorkManager (we use custom factory via HiltWorkerFactory) -->
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
+    </application>
+
+</manifest>

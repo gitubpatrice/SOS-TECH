@@ -1,0 +1,46 @@
+Categories:
+  - Security
+License: Apache-2.0
+AuthorName: Patrice Haltaya
+AuthorEmail: contact@files-tech.com
+WebSite: https://files-tech.com
+SourceCode: https://github.com/gitubpatrice/SOS-TECH
+IssueTracker: https://github.com/gitubpatrice/SOS-TECH/issues
+Changelog: https://github.com/gitubpatrice/SOS-TECH/blob/HEAD/CHANGELOG.md
+
+AutoName: SOS Tech
+
+RepoType: git
+Repo: https://github.com/gitubpatrice/SOS-TECH.git
+
+# Reproducible build pinned to the upstream-signed GitHub release APKs.
+# F-Droid will build from source at the exact commit hash below and verify
+# the resulting APK byte-for-byte against the GitHub asset.
+Binaries: https://github.com/gitubpatrice/SOS-TECH/releases/download/v%v/app-%a-release.apk
+
+Builds:
+  - versionName: 0.1.0
+    versionCode: 1
+    commit: TO_BE_FILLED_AFTER_FIRST_RELEASE
+    subdir: app
+    gradle:
+      - yes
+    rm:
+      - app/lint-baseline.xml
+    prebuild:
+      - sed -i -e '/keystoreProps = Properties/,/}/d' build.gradle.kts
+      - sed -i -e '/signingConfigs/,/}\s*$/d' build.gradle.kts
+      - sed -i -e '/if (keystoreProps.isNotEmpty()) signingConfig/d' build.gradle.kts
+
+# AntiFeatures: none
+# - No NonFreeDep (no Google Services, no Firebase, no ML Kit)
+# - No Tracking
+# - No Ads
+# - No UpstreamNonFree
+# FLOSS: 100% — Vosk model via SAF download (not bundled), SQLCipher FLOSS edition
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+UpdateCheckData: 'app/build.gradle.kts|versionName\s*=\s*"(.*?)"|.|versionCode\s*=\s*(\d+)'
+CurrentVersion: 0.1.0
+CurrentVersionCode: 1

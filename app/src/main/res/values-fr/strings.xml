@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SOS Tech</string>
+
+    <!-- Actions (vouvoiement FR) -->
+    <string name="action_back">Retour</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="action_confirm">Confirmer</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_disable">Désactiver</string>
+
+    <!-- Écran d'accueil -->
+    <string name="home_emergency_button">URGENCE</string>
+    <string name="home_emergency_armed">Mode urgence ARMÉ</string>
+    <string name="home_features_title">Fonctionnalités étendues (opt-in)</string>
+
+    <!-- Fonctionnalités (FR vouvoiement) -->
+    <string name="feature_voice_title">Mot-clé vocal</string>
+    <string name="feature_voice_desc">Déclenchez l\'urgence automatiquement en prononçant un mot-clé (ex. « au secours », « appelle le 112 »). Utilise le moteur Vosk local — aucun cloud.</string>
+
+    <string name="feature_cascade_title">Cascade d\'appels automatique</string>
+    <string name="feature_cascade_desc">Appelle vos contacts d\'urgence l\'un après l\'autre jusqu\'à ce que quelqu\'un réponde. Nécessite la permission READ_PHONE_STATE.</string>
+
+    <string name="feature_siren_title">Sirène + flash</string>
+    <string name="feature_siren_desc">Déclenche une alarme sonore et un stroboscope avec la lampe arrière. Arrêt automatique après 5 minutes. Nécessite la permission CAMERA.</string>
+
+    <string name="feature_livegps_title">GPS en direct</string>
+    <string name="feature_livegps_desc">Envoie votre position en temps réel à vos contacts d\'urgence toutes les 30 s pendant 5 minutes maximum. Nécessite la localisation en arrière-plan.</string>
+
+    <string name="feature_recording_title">Enregistrement audio</string>
+    <string name="feature_recording_desc">Enregistre l\'audio ambiant et le chiffre dans votre coffre sécurisé local. Avertissement légal obligatoire avant activation.</string>
+
+    <string name="feature_webhook_title">Alerte webhook</string>
+    <string name="feature_webhook_desc">Envoie un payload JSON minimal à l\'URL configurée lors d\'un déclenchement d\'urgence. Aucune donnée personnelle n\'est transmise.</string>
+
+    <string name="feature_contacts_title">Contacts d\'urgence</string>
+    <string name="feature_contacts_desc">Configurez qui appeler et prévenir en cas d\'urgence. Stocké localement — jamais synchronisé avec un serveur.</string>
+
+    <string name="feature_coming_soon">Cette fonctionnalité sera entièrement implémentée en v0.2.\n\nLes contrats et les écrans de configuration sont prêts — implémentation à venir.</string>
+
+    <!-- Écran urgence -->
+    <string name="emergency_screen_title">Urgence</string>
+    <string name="emergency_section_call_title">Appeler directement</string>
+    <string name="emergency_section_sms_title">Envoyer un SMS SOS à vos proches</string>
+    <string name="emergency_section_other_title">Autres actions</string>
+    <string name="emergency_section_options_title">Fonctionnalités actives</string>
+    <string name="emergency_call_112_label">Urgences européennes</string>
+    <string name="emergency_call_15_label">SAMU (médical)</string>
+    <string name="emergency_call_17_label">Police</string>
+    <string name="emergency_call_18_label">Pompiers / Secours</string>
+    <string name="emergency_call_close_label">Appeler un proche</string>
+    <string name="emergency_sms_trigger_button">DÉCLENCHER SMS D\'URGENCE</string>
+    <string name="emergency_dry_run_button">Tester sans envoyer</string>
+    <string name="emergency_disable_button">Désactiver le mode urgence</string>
+    <string name="emergency_disable_confirm_title">Désactiver le mode urgence ?</string>
+    <string name="emergency_disable_confirm_body">Cela arrêtera toutes les fonctionnalités d\'urgence actives.</string>
+
+    <!-- Canaux de notification -->
+    <string name="channel_emergency_shortcut_name">Raccourci d\'urgence</string>
+    <string name="channel_emergency_shortcut_desc">Notification persistante pour accéder rapidement aux actions d\'urgence depuis l\'écran verrouillé</string>
+    <string name="channel_voice_trigger_name">Écoute du mot-clé d\'urgence</string>
+    <string name="channel_voice_trigger_desc">Fonctionne en arrière-plan pour détecter votre phrase de déclenchement</string>
+    <string name="channel_cascade_dialer_name">Cascade d\'appels</string>
+    <string name="channel_cascade_dialer_desc">Actif pendant l\'appel automatique de vos contacts d\'urgence dans l\'ordre</string>
+    <string name="channel_live_gps_name">Partage GPS en direct</string>
+    <string name="channel_live_gps_desc">Actif pendant le partage de votre position en temps réel avec vos contacts</string>
+
+    <!-- Service d'écoute vocale -->
+    <string name="voice_trigger_notif_title">SOS Tech — écoute du mot-clé</string>
+    <string name="voice_trigger_notif_text">Prononcez votre mot-clé pour déclencher le mode urgence</string>
+
+    <!-- Service de cascade -->
+    <string name="cascade_dialer_notif_title">SOS Tech — appel des contacts d\'urgence</string>
+    <string name="cascade_dialer_notif_text">Appel des contacts dans l\'ordre…</string>
+
+    <!-- Enregistrement -->
+    <string name="recording_disclaimer_title">Avertissement légal — Enregistrement</string>
+    <string name="recording_disclaimer_understood">J\'ai compris</string>
+
+    <!-- Paramètres -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_section_emergency">Mode urgence</string>
+    <string name="settings_section_voice">Mot-clé vocal (opt-in)</string>
+    <string name="settings_section_cascade">Cascade d\'appels (opt-in)</string>
+    <string name="settings_section_siren">Sirène + flash (opt-in)</string>
+    <string name="settings_section_livegps">GPS en direct (opt-in)</string>
+    <string name="settings_section_recording">Enregistrement (opt-in)</string>
+    <string name="settings_section_webhook">Webhook (opt-in)</string>
+    <string name="settings_section_appearance">Affichage</string>
+
+    <string name="settings_emergency_shortcut_title">Raccourci écran verrouillé</string>
+    <string name="settings_emergency_shortcut_desc">Afficher une notification d\'urgence sur l\'écran verrouillé pour un accès rapide</string>
+
+    <string name="settings_voice_enabled_title">Activer le mot-clé vocal</string>
+    <string name="settings_voice_enabled_desc">Écoute votre phrase de déclenchement en arrière-plan (nécessite le microphone). Le modèle Vosk doit être téléchargé au préalable.</string>
+
+    <string name="settings_cascade_enabled_title">Activer la cascade d\'appels</string>
+    <string name="settings_cascade_enabled_desc">Appelle automatiquement vos contacts l\'un après l\'autre jusqu\'à ce que quelqu\'un réponde (v0.2+)</string>
+
+    <string name="settings_siren_enabled_title">Activer la sirène + flash</string>
+    <string name="settings_siren_enabled_desc">Déclenche une alarme sonore et un stroboscope en cas d\'urgence (v0.2+)</string>
+
+    <string name="settings_livegps_enabled_title">Activer le GPS en direct</string>
+    <string name="settings_livegps_enabled_desc">Partager votre position en temps réel avec vos contacts d\'urgence (v0.2+)</string>
+
+    <string name="settings_recording_enabled_title">Activer l\'enregistrement ambiant</string>
+    <string name="settings_recording_enabled_desc">Enregistre l\'audio lors d\'une urgence et stocke dans le coffre chiffré (avertissement légal requis)</string>
+    <string name="settings_recording_legal_warning">AVERTISSEMENT : Enregistrer un appel sans le consentement de tous les interlocuteurs est illégal en France (art. 226-15 du Code pénal). Vous êtes seul responsable d\'obtenir ce consentement.</string>
+
+    <string name="settings_webhook_enabled_title">Activer le webhook</string>
+    <string name="settings_webhook_enabled_desc">Envoie une alerte JSON à votre URL configurée lors d\'un déclenchement d\'urgence (v0.2+)</string>
+
+    <string name="settings_flag_secure_title">Écran sécurisé (FLAG_SECURE)</string>
+    <string name="settings_flag_secure_desc">Empêche les captures d\'écran et masque le contenu dans les applications récentes</string>
+
+    <!-- Erreurs -->
+    <string name="error_generic">Une erreur est survenue. Veuillez réessayer.</string>
+    <string name="error_not_implemented">Cette fonctionnalité n\'est pas encore implémentée (v0.2+)</string>
+</resources>

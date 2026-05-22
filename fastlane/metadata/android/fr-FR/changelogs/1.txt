@@ -1,0 +1,1 @@
+v0.1.0 — Première version. Écran d'urgence avec 4 boutons d'appel (112/15/17/18), déclenchement SMS urgence, prévisualisation sans envoi, 7 stubs de fonctionnalités opt-in (vocal, cascade, sirène, GPS live, enregistrement, webhook, contacts). 100% local, sans cloud, Apache 2.0.

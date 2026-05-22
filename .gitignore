@@ -1,0 +1,53 @@
+# IDE / OS
+*.iml
+*.ipr
+*.iws
+/.idea/
+.DS_Store
+
+# Gradle
+.gradle/
+build/
+/local.properties
+/captures
+.externalNativeBuild
+.cxx/
+
+# App build outputs
+/app/release/
+/app/debug/
+*.apk
+*.aab
+
+# Signing
+keystore.properties
+*.keystore
+*.jks
+
+# Kotlin
+.kotlin/
+
+# Build logs
+/build.log
+/build_errors.log
+replay_pid*.log
+
+# Claude / agent local files
+.claude/
+CLAUDE.md
+ONBOARDING.md
+
+# Crash dumps
+*.hprof
+hs_err_pid*.log
+hs_err_pid*.mdmp
+
+# KSP output
+ksp_output.log
+
+# Build agent / Android Studio caches
+.checkov.cache
+.cache/
+
+# Room schemas are committed (needed for migration tests)
+# app/schemas/ — intentionally NOT ignored

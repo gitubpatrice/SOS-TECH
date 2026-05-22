@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SOS Tech</string>
+
+    <!-- Actions -->
+    <string name="action_back">Back</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_disable">Disable</string>
+
+    <!-- Home screen -->
+    <string name="home_emergency_button">EMERGENCY</string>
+    <string name="home_emergency_armed">Emergency mode ARMED</string>
+    <string name="home_features_title">Extended features (opt-in)</string>
+
+    <!-- Feature titles + descriptions (EN) -->
+    <string name="feature_voice_title">Voice keyword</string>
+    <string name="feature_voice_desc">Trigger emergency automatically when you say a keyword (e.g. \'help\', \'call 112\'). Uses Vosk local model — no cloud.</string>
+
+    <string name="feature_cascade_title">Automatic call cascade</string>
+    <string name="feature_cascade_desc">Calls your emergency contacts one by one until someone answers. Requires READ_PHONE_STATE permission.</string>
+
+    <string name="feature_siren_title">Siren + flash</string>
+    <string name="feature_siren_desc">Triggers an audio alarm and rear flashlight strobe. Auto-stops after 5 minutes. Requires CAMERA permission.</string>
+
+    <string name="feature_livegps_title">Live GPS sharing</string>
+    <string name="feature_livegps_desc">Sends your real-time location to your emergency contacts every 30 s for up to 5 minutes. Requires background location permission.</string>
+
+    <string name="feature_recording_title">Call recording</string>
+    <string name="feature_recording_desc">Records ambient audio and encrypts it in your local secure vault. Legal disclaimer required before activation.</string>
+
+    <string name="feature_webhook_title">Webhook alert</string>
+    <string name="feature_webhook_desc">Sends a minimal JSON payload to your configured URL when an emergency is triggered. No personal data is shared.</string>
+
+    <string name="feature_contacts_title">Emergency contacts</string>
+    <string name="feature_contacts_desc">Configure who to call and message in an emergency. Stored locally — never synced to any server.</string>
+
+    <string name="feature_coming_soon">This feature will be fully implemented in v0.2.\n\nThe contracts and configuration screens are ready — implementation coming soon.</string>
+
+    <!-- Emergency screen -->
+    <string name="emergency_screen_title">Emergency</string>
+    <string name="emergency_section_call_title">Call directly</string>
+    <string name="emergency_section_sms_title">Send emergency SMS to contacts</string>
+    <string name="emergency_section_other_title">Other actions</string>
+    <string name="emergency_section_options_title">Active features</string>
+    <string name="emergency_call_112_label">European Emergency</string>
+    <string name="emergency_call_15_label">SAMU (Medical)</string>
+    <string name="emergency_call_17_label">Police</string>
+    <string name="emergency_call_18_label">Fire / Rescue</string>
+    <string name="emergency_call_close_label">Call a trusted contact</string>
+    <string name="emergency_sms_trigger_button">TRIGGER EMERGENCY SMS</string>
+    <string name="emergency_dry_run_button">Test without sending</string>
+    <string name="emergency_disable_button">Disable emergency mode</string>
+    <string name="emergency_disable_confirm_title">Disable emergency mode?</string>
+    <string name="emergency_disable_confirm_body">This will stop all active emergency features.</string>
+
+    <!-- Notification channels -->
+    <string name="channel_emergency_shortcut_name">Emergency shortcut</string>
+    <string name="channel_emergency_shortcut_desc">Persistent notification for quick access to emergency actions from the lock screen</string>
+    <string name="channel_voice_trigger_name">Voice keyword monitoring</string>
+    <string name="channel_voice_trigger_desc">Runs in the background to listen for your emergency keyword phrase</string>
+    <string name="channel_cascade_dialer_name">Call cascade</string>
+    <string name="channel_cascade_dialer_desc">Active while automatically calling your emergency contacts in order</string>
+    <string name="channel_live_gps_name">Live GPS sharing</string>
+    <string name="channel_live_gps_desc">Active while sharing your real-time location with your emergency contacts</string>
+
+    <!-- Voice trigger service -->
+    <string name="voice_trigger_notif_title">SOS Tech — listening for keyword</string>
+    <string name="voice_trigger_notif_text">Say your keyword to trigger emergency mode</string>
+
+    <!-- Cascade dialer service -->
+    <string name="cascade_dialer_notif_title">SOS Tech — calling emergency contacts</string>
+    <string name="cascade_dialer_notif_text">Calling contacts in order…</string>
+
+    <!-- Recording screen -->
+    <string name="recording_disclaimer_title">Legal notice — Call recording</string>
+    <string name="recording_disclaimer_understood">I understand</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_emergency">Emergency mode</string>
+    <string name="settings_section_voice">Voice keyword (opt-in)</string>
+    <string name="settings_section_cascade">Call cascade (opt-in)</string>
+    <string name="settings_section_siren">Siren + flash (opt-in)</string>
+    <string name="settings_section_livegps">Live GPS (opt-in)</string>
+    <string name="settings_section_recording">Call recording (opt-in)</string>
+    <string name="settings_section_webhook">Webhook (opt-in)</string>
+    <string name="settings_section_appearance">Display</string>
+
+    <string name="settings_emergency_shortcut_title">Lock-screen shortcut</string>
+    <string name="settings_emergency_shortcut_desc">Show an emergency notification on the lock screen for quick access</string>
+
+    <string name="settings_voice_enabled_title">Enable voice keyword</string>
+    <string name="settings_voice_enabled_desc">Listen for your keyword phrase in the background (requires microphone). Vosk model must be downloaded first.</string>
+
+    <string name="settings_cascade_enabled_title">Enable call cascade</string>
+    <string name="settings_cascade_enabled_desc">Automatically call contacts one by one until someone answers (v0.2+)</string>
+
+    <string name="settings_siren_enabled_title">Enable siren + flash</string>
+    <string name="settings_siren_enabled_desc">Trigger audio alarm and flashlight strobe during emergency (v0.2+)</string>
+
+    <string name="settings_livegps_enabled_title">Enable live GPS sharing</string>
+    <string name="settings_livegps_enabled_desc">Send real-time location to your emergency contacts during emergency (v0.2+)</string>
+
+    <string name="settings_recording_enabled_title">Enable ambient recording</string>
+    <string name="settings_recording_enabled_desc">Record audio during emergency and store encrypted in vault (requires legal disclaimer)</string>
+    <string name="settings_recording_legal_warning">WARNING: Recording calls without the consent of all parties is illegal in France (art. 226-15 Penal Code). You are solely responsible for obtaining consent.</string>
+
+    <string name="settings_webhook_enabled_title">Enable webhook</string>
+    <string name="settings_webhook_enabled_desc">Send a JSON alert to your configured URL when emergency is triggered (v0.2+)</string>
+
+    <string name="settings_flag_secure_title">Secure screen (FLAG_SECURE)</string>
+    <string name="settings_flag_secure_desc">Prevent screenshots and hide app content in recent apps preview</string>
+
+    <!-- Errors -->
+    <string name="error_generic">An error occurred. Please try again.</string>
+    <string name="error_not_implemented">This feature is not yet implemented (v0.2+)</string>
+</resources>

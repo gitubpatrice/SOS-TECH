@@ -1,0 +1,1 @@
+v0.1.0 — Initial release. Emergency screen with 4 call buttons (112/15/17/18), emergency SMS trigger, dry-run preview, 7 opt-in feature stubs (voice, cascade, siren, GPS live, recording, webhook, contacts). 100% local, no cloud, Apache 2.0.

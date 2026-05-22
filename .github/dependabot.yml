@@ -1,0 +1,58 @@
+version: 2
+
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    groups:
+      kotlin-and-compose:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "androidx.compose*"
+          - "androidx.activity*"
+        update-types:
+          - "minor"
+          - "patch"
+      androidx-core:
+        patterns:
+          - "androidx.core*"
+          - "androidx.lifecycle*"
+          - "androidx.work*"
+          - "androidx.room*"
+        update-types:
+          - "minor"
+          - "patch"
+      tests:
+        patterns:
+          - "org.junit*"
+          - "*truth*"
+          - "*mockk*"
+          - "*robolectric*"
+        update-types:
+          - "minor"
+          - "patch"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"

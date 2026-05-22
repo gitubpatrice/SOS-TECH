@@ -1,0 +1,1 @@
+Personal emergency app: voice trigger, siren, GPS live, call cascade. 100% local, no cloud.

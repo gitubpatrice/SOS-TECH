@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SOS Tech — Android 12+ data extraction rules (D2D + cloud backup) -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="sos_tech.db" />
+        <exclude domain="database" path="sos_tech.db-shm" />
+        <exclude domain="database" path="sos_tech.db-wal" />
+        <exclude domain="sharedpref" path="sos_settings.preferences_pb" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="sos_tech.db" />
+        <exclude domain="sharedpref" path="sos_settings.preferences_pb" />
+    </device-transfer>
+</data-extraction-rules>

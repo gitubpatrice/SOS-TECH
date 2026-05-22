@@ -1,0 +1,31 @@
+SOS Tech is a dedicated personal emergency app for Android. Unlike general messaging apps, its single mission is to give you the fastest and most reliable way to trigger help — with advanced features designed for people who need them, and a zero-cloud architecture that respects your privacy.
+
+All data is stored locally. No account. No telemetry. No ads. 100% FLOSS, available on F-Droid.
+
+CORE EMERGENCY FEATURES
+• 4 direct call buttons: 112 (European emergency), 15 (SAMU), 17 (Police), 18 (Fire/Rescue)
+• Emergency SMS to your trusted contacts with optional GPS coordinates
+• "Test without sending" dry-run preview
+• "I'm okay" kill-switch to reset emergency mode
+• Lock-screen notification shortcut (opt-in)
+
+EXTENDED FEATURES (all opt-in, default OFF)
+• Voice keyword trigger — say "au secours" or a custom phrase to automatically trigger emergency. Uses the Vosk FLOSS speech recognition engine — runs entirely on-device, no cloud, no internet.
+• Automatic call cascade — if your first contact doesn't answer in 10 seconds, SOS Tech automatically calls the next one down the list.
+• Siren + flash strobe — loud audio alarm and rear flashlight strobe. Auto-stops after 5 minutes.
+• Live GPS sharing — sends your real-time location to your emergency contacts every 30 seconds for up to 5 minutes.
+• Ambient recording — records audio during an emergency and stores it encrypted in a local secure vault. Legal disclaimer required before activation.
+• Webhook alert — sends a minimal JSON payload to a URL you configure (for smart home integrations, family alert services, etc.). No contact names or SMS body are ever included.
+
+PRIVACY BY DESIGN
+• Zero cloud: all data stays on your device
+• SQLCipher encrypted database for call logs and recordings
+• FLAG_SECURE to prevent screenshots and hide content in recent apps
+• No Google Services, no Firebase, no tracking of any kind
+
+SECURITY
+• Threat model and audit history published in SECURITY.md
+• Apache 2.0 open source license
+• F-Droid verified reproducible builds
+
+SOS Tech is Files Tech app #8 — built with the same architecture and security standards as SMS Tech, Pass Tech, Notes Tech, and the rest of the Files Tech portfolio.

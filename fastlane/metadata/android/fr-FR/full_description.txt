@@ -1,0 +1,31 @@
+SOS Tech est une application Android dédiée aux urgences personnelles. Contrairement aux applications de messagerie généralistes, sa mission unique est de vous donner le moyen le plus rapide et le plus fiable de déclencher de l'aide — avec des fonctionnalités avancées pour ceux qui en ont besoin, et une architecture 100% locale qui respecte votre vie privée.
+
+Toutes les données sont stockées localement. Aucun compte. Aucune télémétrie. Aucune publicité. 100% FLOSS, disponible sur F-Droid.
+
+FONCTIONNALITÉS D'URGENCE DE BASE
+• 4 boutons d'appel direct : 112 (urgences européennes), 15 (SAMU), 17 (Police), 18 (Pompiers)
+• SMS d'urgence à vos contacts de confiance avec coordonnées GPS optionnelles
+• "Tester sans envoyer" — prévisualisation du déclenchement
+• Bouton "Je vais bien" pour désactiver le mode urgence
+• Raccourci sur l'écran verrouillé (opt-in)
+
+FONCTIONNALITÉS ÉTENDUES (toutes opt-in, désactivées par défaut)
+• Mot-clé vocal — prononcez "au secours" ou une phrase personnalisée pour déclencher automatiquement l'urgence. Utilise le moteur de reconnaissance vocale Vosk FLOSS — entièrement sur l'appareil, sans cloud, sans internet.
+• Cascade d'appels automatique — si votre premier contact ne répond pas en 10 secondes, SOS Tech appelle automatiquement le suivant.
+• Sirène + stroboscope — alarme sonore forte et stroboscope avec la lampe arrière. Arrêt automatique après 5 minutes.
+• Partage GPS en direct — envoie votre position en temps réel à vos contacts d'urgence toutes les 30 secondes pendant 5 minutes maximum.
+• Enregistrement ambiant — enregistre l'audio lors d'une urgence et le stocke chiffré dans un coffre local sécurisé. Avertissement légal obligatoire avant activation.
+• Alerte webhook — envoie un payload JSON minimal à une URL que vous configurez (intégration maison connectée, service d'alerte famille, etc.). Aucun nom de contact ni corps de SMS n'est jamais inclus.
+
+RESPECT DE LA VIE PRIVÉE PAR CONCEPTION
+• Zéro cloud : toutes les données restent sur votre appareil
+• Base de données chiffrée SQLCipher pour les journaux d'appels et les enregistrements
+• FLAG_SECURE pour empêcher les captures d'écran et masquer le contenu dans les apps récentes
+• Aucun service Google, aucun Firebase, aucun pistage d'aucune sorte
+
+SÉCURITÉ
+• Modèle de menace et historique des audits publiés dans SECURITY.md
+• Licence open source Apache 2.0
+• Builds reproductibles vérifiés par F-Droid
+
+SOS Tech est l'app Files Tech n°8 — construite avec la même architecture et les mêmes standards de sécurité que SMS Tech, Pass Tech, Notes Tech et le reste du portfolio Files Tech.

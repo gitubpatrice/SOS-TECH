@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SOS Tech — exclude sensitive data from Android auto-backup -->
+<full-backup-content>
+    <!-- SQLCipher DB -->
+    <exclude domain="database" path="sos_tech.db" />
+    <exclude domain="database" path="sos_tech.db-shm" />
+    <exclude domain="database" path="sos_tech.db-wal" />
+    <!-- DataStore preferences -->
+    <exclude domain="sharedpref" path="sos_settings.preferences_pb" />
+</full-backup-content>
