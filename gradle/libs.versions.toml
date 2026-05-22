@@ -54,7 +54,7 @@ androidx-test-runner = "1.6.2"
 espresso = "3.6.1"
 
 # Quality
-detekt = "1.23.7"
+detekt = "1.23.8"
 ktlint-gradle = "12.1.1"
 
 [libraries]
